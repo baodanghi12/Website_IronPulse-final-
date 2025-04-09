@@ -17,9 +17,15 @@ export const getOrderStatistics = async (req, res) => {
     }, 0);
 
     const profit = revenue - cost;
-    const deliveringOrders = await orderModel.countDocuments({ status: 'delivering' });
-
-    res.status(200).json({ sales, revenue, cost, profit, deliveringOrders });
+    //đơn hàng đã đặtđặt
+    const deliveringOrders = await orderModel.countDocuments({
+      status: { $regex: /^Order Placed$/i }
+    });
+    // đơn hàng đã giao
+    const toBeReceivedOrders = await orderModel.countDocuments({
+      status: { $regex: /^Delivered$/i }
+    });
+    res.status(200).json({ sales, revenue, cost, profit, deliveringOrders, toBeReceivedOrders});
   } catch (error) {
     console.error('Error getting statistics:', error);
     res.status(500).json({ message: 'Server error' });

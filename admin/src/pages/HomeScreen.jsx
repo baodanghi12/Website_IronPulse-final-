@@ -16,6 +16,7 @@ const HomeScreen = () => {
   cost: 0,
   profit: 0,
   deliveringOrders: 0,
+  toBeReceivedOrders: 0,
   });
 
 
@@ -26,13 +27,14 @@ const HomeScreen = () => {
       const res = await axios.get('/api/statistics/orders');
 
       console.log('API response:', res.data);
-      const { sales, revenue, cost, profit, deliveringOrders} = res.data;
+      const { sales, revenue, cost, profit, deliveringOrders, toBeReceivedOrders} = res.data;
       setStatisticValues({
         salesCount: sales,
         revenue,
         cost,
         profit,
         deliveringOrders,
+        toBeReceivedOrders,
       });
     } catch (error) {
       console.error('Error fetching statistics:', error);
@@ -205,9 +207,12 @@ const HomeScreen = () => {
     >
       <StatisticComponent 
       type='vertical' 
-      value= {statisticValue.deliveringOrders }
+      value= {statisticValue.deliveringOrders}
       title='Quantity in Hand' />
-      <StatisticComponent type='vertical' value='456' title='To be recieve' />
+      <StatisticComponent 
+      type='vertical' 
+      value={statisticValue.toBeReceivedOrders} 
+      title='To be recieved' />
     </div>
   </Card>
 
