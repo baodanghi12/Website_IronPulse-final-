@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Spin, Typography } from 'antd';
+import { Card, Spin, Typography } from 'antd';
 import StatisticComponent from '../components/StatisticComponent';
 import { VND } from '../utils/handleCurrency';
 import SalesAndPurchaseStatistic from '../components/SalesAndPurchaseStatistic';
 // import { handleAPI } from '../utils/api';
 import TopSellingAndLowQuantityStatistic from '../components/TopSellingAndLowQuantityStatistic';
 import axios from 'axios'
+
 const HomeScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [statisticValue, setStatisticValues] = useState({
     sales: [],
+    salesCount: 0,
+  revenue: 0,
+  cost: 0,
+  profit: 0,
+  deliveringOrders: 0,
   });
 
 
@@ -18,13 +24,15 @@ const HomeScreen = () => {
     setIsLoading(true);
     try {
       const res = await axios.get('/api/statistics/orders');
+
       console.log('API response:', res.data);
-      const { sales, revenue, cost, profit } = res.data;
+      const { sales, revenue, cost, profit, deliveringOrders} = res.data;
       setStatisticValues({
         salesCount: sales,
         revenue,
         cost,
         profit,
+        deliveringOrders,
       });
     } catch (error) {
       console.error('Error fetching statistics:', error);
@@ -36,6 +44,8 @@ const HomeScreen = () => {
   useEffect(() => {
     getStatistics();
   }, []);
+
+
 
   const totalcost = (value) => {
     const items = value.map((item) => {
@@ -112,7 +122,7 @@ const HomeScreen = () => {
             <div style={{ flex: '0 0 22%' }}>
               <StatisticComponent
                 value={VND.format(
-                  statisticValue.cost || 0
+                  statisticValue.profit || 0
                 )}
                 title='Profits'
                 color='#FCD547'
@@ -121,12 +131,13 @@ const HomeScreen = () => {
             </div>
             <div style={{ flex: '0 0 22%' }}>
               <StatisticComponent
-                value={VND.format(statisticValue.profit || 0)}
+                value={VND.format(statisticValue.cost || 0)}
                 title='Costs'
-                image='./src/assets/icons8-sales-50.png'
+                image='./src/assets/icons8-cost-24.png'
+                color='#47FC5E'
               />
             </div>
-          </div>
+          </div> 
         </Card>
         <Card className='mb-4' style={{ width: '100%', marginTop: '1rem', height:'211px' }}>
     <Typography.Title level={4}>Purchase Overview</Typography.Title>
@@ -144,29 +155,32 @@ const HomeScreen = () => {
         <StatisticComponent
           value='10,000'
           title='Purchase'
-          image='./src/assets/icons8-sales-50.png'
+          color='#47D2FC'
+          image='./src/assets/icons8-purchase-24.png'
         />
       </div>
       <div style={{ flex: '0 0 22%' }}>
         <StatisticComponent
           value='5,000,000'
           title='Cost'
-          color='#DE5AFF'
-          image='./src/assets/icons8-sales-50.png'
+          color='#47FC5E'
+          image='./src/assets/icons8-cost-24.png'
         />
       </div>
       <div style={{ flex: '0 0 22%' }}>
         <StatisticComponent
           value='100,000'
           title='Cancel'
-          image='./src/assets/icons8-sales-50.png'
+          color='#AF6CFF'
+          image='./src/assets/icons8-cancel-50.png'
         />
       </div>
       <div style={{ flex: '0 0 22%' }}>
         <StatisticComponent
           value='500,000'
           title='Return'
-          image='./src/assets/icons8-sales-50.png'
+          color='#FFB36C'
+          image='./src/assets/icons8-return-order-24.png'
         />
       </div>
     </div>
@@ -189,7 +203,10 @@ const HomeScreen = () => {
         padding: '0.5rem 0',
       }}
     >
-      <StatisticComponent type='vertical' value='123' title='Quantity in Hand' />
+      <StatisticComponent 
+      type='vertical' 
+      value= {statisticValue.deliveringOrders }
+      title='Quantity in Hand' />
       <StatisticComponent type='vertical' value='456' title='To be recieve' />
     </div>
   </Card>

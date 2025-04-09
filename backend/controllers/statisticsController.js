@@ -17,8 +17,9 @@ export const getOrderStatistics = async (req, res) => {
     }, 0);
 
     const profit = revenue - cost;
+    const deliveringOrders = await orderModel.countDocuments({ status: 'delivering' });
 
-    res.status(200).json({ sales, revenue, cost, profit });
+    res.status(200).json({ sales, revenue, cost, profit, deliveringOrders });
   } catch (error) {
     console.error('Error getting statistics:', error);
     res.status(500).json({ message: 'Server error' });
