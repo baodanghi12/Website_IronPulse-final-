@@ -13,7 +13,7 @@ const TopSellingAndLowQuantityStatistic = () => {
         {/* Card 1 */}
         <Card
           title="Top Selling Stock"
-          extra={<Link to={``}>See all</Link>}
+          extra={<Link to={`/bills`}>See all</Link>}
           style={{
             flex: 2, // Đảm bảo Card chiếm cùng một tỷ lệ
              // Đặt chiều cao cố định

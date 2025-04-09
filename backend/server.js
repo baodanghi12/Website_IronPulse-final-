@@ -9,6 +9,7 @@ import cartRouter from './router/cartRoute.js';
 import orderRouter from './router/orderRoute.js';
 import PaymentRouter from './router/paymentRoute.js';
 import SupplierRouter from './router/supplierRoute.js';
+import statisticsRoutes from './router/statisticsRoutes.js'
 // import { logMiddleware } from './middleware/logMiddleware.js';
 // import LogModel from './models/LogModel.js';
 // import { createdAt } from '../admin/src/models/LogModel.js';
@@ -33,7 +34,7 @@ app.use('/api/cart', cartRouter)
 app.use('/api/order',orderRouter)
 app.use('/payments', PaymentRouter)
 app.use('/supplier', SupplierRouter)
-
+app.use('/api/statistics', statisticsRoutes);
 // app.get('/logs', async (req, res) => {
     // try {
     //     const items = await LogModel.find()

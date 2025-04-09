@@ -1,0 +1,20 @@
+# Loại bỏ các thư mục build hoặc node_modules
+node_modules/
+dist/
+build/
+
+# Loại bỏ các file tạm thời hoặc không cần thiết
+*.log
+*.tmp
+*.cache
+.DS_Store
+Thumbs.db
+
+# Loại bỏ các file môi trường
+.env
+.env.local
+
+# Loại bỏ các file lớn hoặc không cần thiết
+*.zip
+*.tar.gz
+*.mp4

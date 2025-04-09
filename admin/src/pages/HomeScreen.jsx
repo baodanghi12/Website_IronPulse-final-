@@ -1,33 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Spin, Typography } from 'antd';
+import { Button, Card, Spin, Typography } from 'antd';
 import StatisticComponent from '../components/StatisticComponent';
 import { VND } from '../utils/handleCurrency';
 import SalesAndPurchaseStatistic from '../components/SalesAndPurchaseStatistic';
-
+// import { handleAPI } from '../utils/api';
 import TopSellingAndLowQuantityStatistic from '../components/TopSellingAndLowQuantityStatistic';
-
+import axios from 'axios'
 const HomeScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [statisticValue, setStatisticValues] = useState({
     sales: [],
   });
 
-  useEffect(() => {
-    getStatistics();
-  }, []);
+
 
   const getStatistics = async () => {
     setIsLoading(true);
-    const api = `/payment/statistic`;
     try {
-      const res = await handleAPI(api);
-      console.log(res); // Log kết quả API nếu cần
+      const res = await axios.get('/api/statistics/orders');
+      console.log('API response:', res.data);
+      const { sales, revenue, cost, profit } = res.data;
+      setStatisticValues({
+        salesCount: sales,
+        revenue,
+        cost,
+        profit,
+      });
     } catch (error) {
-      console.error(error); // Fix lỗi consolele.log thành console.error
+      console.error('Error fetching statistics:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    getStatistics();
+  }, []);
 
   const totalcost = (value) => {
     const items = value.map((item) => {
@@ -36,6 +44,23 @@ const HomeScreen = () => {
 
     return items.reduce((a, b) => a + b, 0);
   };
+
+  // const handleUpdateCost = async (value) => {
+  //   try {
+  //     const items = value.map((item) => {
+  //       item.products.forEach((product) => {
+  //         if (!product.cost) {
+  //           product.cost = product.price * 0.7;
+  //           console.log(product._id);
+  //         }
+  //         console.log('product cost', product.cost);
+  //       });
+  //     });
+  //     await Promise.all(items);
+  //   } catch (error) {
+  //     console.error('Error updating cost:', error);
+  //   }
+  // };
 
   return isLoading ? (
     <div className='container text-center py-5'>
@@ -69,7 +94,7 @@ const HomeScreen = () => {
           >
             <div style={{ flex: '0 0 22%' }}>
               <StatisticComponent
-                value={statisticValue.sales.length.toLocaleString()}
+                value={statisticValue.salesCount}
                 title='Sales'
                 image='./src/assets/icons8-sales-50.png'
               />
@@ -77,25 +102,26 @@ const HomeScreen = () => {
             <div style={{ flex: '0 0 22%' }}>
               <StatisticComponent
                 value={VND.format(
-                  statisticValue.sales.reduce((a, b) => a + b.total, 0)
+                  statisticValue.revenue || 0
                 )}
                 title='Revenue'
                 color='#DE5AFF'
-                image='./src/assets/icons8-sales-50.png'
+                image='./src/assets/icons8-revenue-32.png'
               />
             </div>
             <div style={{ flex: '0 0 22%' }}>
               <StatisticComponent
                 value={VND.format(
-                  statisticValue.sales.reduce((a, b) => a + b.total, 0) - totalcost(statisticValue.sales)
+                  statisticValue.cost || 0
                 )}
                 title='Profits'
-                image='./src/assets/icons8-sales-50.png'
+                color='#FCD547'
+                image='./src/assets/icons8-profit-50.png'
               />
             </div>
             <div style={{ flex: '0 0 22%' }}>
               <StatisticComponent
-                value={VND.format(totalcost(statisticValue.sales))}
+                value={VND.format(statisticValue.profit || 0)}
                 title='Costs'
                 image='./src/assets/icons8-sales-50.png'
               />
@@ -103,7 +129,7 @@ const HomeScreen = () => {
           </div>
         </Card>
         <Card className='mb-4' style={{ width: '100%', marginTop: '1rem', height:'211px' }}>
-    <Typography.Title level={4}>Sales Overviews 2</Typography.Title>
+    <Typography.Title level={4}>Purchase Overview</Typography.Title>
     <div
       className='d-flex justify-content-center mt-3'
       style={{
@@ -117,14 +143,14 @@ const HomeScreen = () => {
       <div style={{ flex: '0 0 22%' }}>
         <StatisticComponent
           value='10,000'
-          title='Orders'
+          title='Purchase'
           image='./src/assets/icons8-sales-50.png'
         />
       </div>
       <div style={{ flex: '0 0 22%' }}>
         <StatisticComponent
           value='5,000,000'
-          title='Revenue'
+          title='Cost'
           color='#DE5AFF'
           image='./src/assets/icons8-sales-50.png'
         />
@@ -132,14 +158,14 @@ const HomeScreen = () => {
       <div style={{ flex: '0 0 22%' }}>
         <StatisticComponent
           value='100,000'
-          title='Subproducts'
+          title='Cancel'
           image='./src/assets/icons8-sales-50.png'
         />
       </div>
       <div style={{ flex: '0 0 22%' }}>
         <StatisticComponent
           value='500,000'
-          title='Total'
+          title='Return'
           image='./src/assets/icons8-sales-50.png'
         />
       </div>
@@ -181,7 +207,7 @@ const HomeScreen = () => {
       }}
     >
       <StatisticComponent type='vertical' value='789' title='Products' />
-      <StatisticComponent type='vertical' value='012' title='Supplierss' />
+      <StatisticComponent type='vertical' value='012' title='Suppliers' />
     </div>
   </Card>
   

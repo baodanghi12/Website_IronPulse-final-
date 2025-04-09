@@ -77,7 +77,7 @@ const ReportScreen = () => {
                 }}
             >
                 <Statistic title="Total Bills" value={789} />
-                <Statistic title="Total" value={789} />
+                <Statistic title="Total Orders" value={789} />
                 <Statistic title="Profit MOM" value={789} />
                 <Statistic title="Profit YOY" value={789} />
             </div>
