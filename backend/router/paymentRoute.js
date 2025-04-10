@@ -5,4 +5,5 @@ const Router = express.Router();
 
 Router.get('/statistic',getStatistics)
 Router.get('/bills', getBills)
+
 export default Router;

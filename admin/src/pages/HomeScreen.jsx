@@ -141,57 +141,13 @@ const HomeScreen = () => {
             </div>
           </div> 
         </Card>
-        <Card className='mb-4' style={{ width: '100%', marginTop: '1rem', height:'211px' }}>
-    <Typography.Title level={4}>Purchase Overview</Typography.Title>
-    <div
-      className='d-flex justify-content-center mt-3'
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        gap: '0.2rem',
-        maxWidth: '100%',
-      }}
-    >
-      <div style={{ flex: '0 0 22%' }}>
-        <StatisticComponent
-          value='10,000'
-          title='Purchase'
-          color='#47D2FC'
-          image='./src/assets/icons8-purchase-24.png'
-        />
-      </div>
-      <div style={{ flex: '0 0 22%' }}>
-        <StatisticComponent
-          value='5,000,000'
-          title='Cost'
-          color='#47FC5E'
-          image='./src/assets/icons8-cost-24.png'
-        />
-      </div>
-      <div style={{ flex: '0 0 22%' }}>
-        <StatisticComponent
-          value='100,000'
-          title='Cancel'
-          color='#AF6CFF'
-          image='./src/assets/icons8-cancel-50.png'
-        />
-      </div>
-      <div style={{ flex: '0 0 22%' }}>
-        <StatisticComponent
-          value='500,000'
-          title='Return'
-          color='#FFB36C'
-          image='./src/assets/icons8-return-order-24.png'
-        />
-      </div>
-    </div>
-  </Card>
+        
       </div>
       
 
       {/* Card phụ - nằm bên phải */}
-{/* Bọc cả Extra Stats và Extra Stats 2 lại */}
+{/* Bọc cả Extra Stats */}
+{/* Bọc cả Extra Stats */}
 <div style={{ flex: '1 1 30%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
   {/* Extra Stats */}
   <Card className='mb-0' body={{ padding: '1rem' }}>
@@ -202,38 +158,80 @@ const HomeScreen = () => {
         justifyContent: 'space-around',
         alignItems: 'center',
         gap: '1rem',
-        padding: '0.5rem 0',
+        padding: '0.2rem 0',
       }}
     >
-      <StatisticComponent 
-      type='vertical' 
-      value= {statisticValue.deliveringOrders}
-      title='Quantity in Hand' />
-      <StatisticComponent 
-      type='vertical' 
-      value={statisticValue.toBeReceivedOrders} 
-      title='To be recieved' />
-    </div>
-  </Card>
+      {/* Block 1 */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* ICON */}
+        <div
+          style={{
+            width: 35,
+            height: 35,
+            backgroundColor: '#339AF01a',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: 8,
+            marginBottom: '0.2rem',
+          }}
+        >
+          <img
+            style={{
+              width: '60%',
+              height: 'auto',
+              borderRadius: 2,
+            }}
+            src='./src/assets/icons8-sales-50.png'
+            alt='icon'
+          />
+        </div>
 
-  {/* Extra Stats 2 */}
-  <Card className='mb-0' body={{ padding: '1.8rem' }}>
-    <Typography.Title level={4}>Extra Stats 2</Typography.Title>
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        gap: '1rem',
-        padding: '0.5rem 0',
-      }}
-    >
-      <StatisticComponent type='vertical' value='789' title='Products' />
-      <StatisticComponent type='vertical' value='012' title='Suppliers' />
+        {/* VALUE & TITLE */}
+        <Typography.Text style={{ fontSize: '1.2rem', fontWeight: '600' }}>
+          {statisticValue.deliveringOrders}
+        </Typography.Text>
+        <Typography.Text type='secondary' style={{ fontSize: '0.8rem' }}>
+          Quantity in Hand
+        </Typography.Text>
+      </div>
+
+      {/* Block 2 */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div
+          style={{
+            width: 35,
+            height: 35,
+            backgroundColor: '#339AF01a',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: 8,
+            marginBottom: '0.2rem',
+          }}
+        >
+          <img
+            style={{
+              width: '60%',
+              height: 'auto',
+              borderRadius: 2,
+            }}
+            src='./src/assets/icons8-sales-50.png'
+            alt='icon'
+          />
+        </div>
+
+        <Typography.Text style={{ fontSize: '1.2rem', fontWeight: '600' }}>
+          {statisticValue.toBeReceivedOrders}
+        </Typography.Text>
+        <Typography.Text type='secondary' style={{ fontSize: '0.8rem' }}>
+          To be received
+        </Typography.Text>
+      </div>
     </div>
   </Card>
-  
 </div>
+
 
 
     </div>
