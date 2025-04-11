@@ -6,8 +6,10 @@ export const getOrderStatistics = async (req, res) => {
 
   try {
     const orders = await orderModel.find();
+    
+  if (orders.length > 0) {
+  }
 
-    // Nếu có query `type` thì xử lý cho biểu đồ
     if (type === 'weekly' || type === 'monthly' || type === 'yearly') {
       let labels = [];
       let salesData = [];
@@ -16,14 +18,11 @@ export const getOrderStatistics = async (req, res) => {
       if (type === 'weekly') {
         for (let i = 6; i >= 0; i--) {
           const day = moment().subtract(i, 'days');
-          const label = day.format('ddd'); // Mon, Tue...
-
+          const label = day.format('ddd');
           const filteredOrders = orders.filter(order =>
             moment(order.createdAt).isSame(day, 'day')
           );
-
-          const totalSales = filteredOrders.reduce((sum, order) => sum + order.amount, 0);
-
+          const totalSales = filteredOrders.reduce((sum, order) => sum + (Number(order.amount) || 0), 0);
           labels.push(label);
           salesData.push(totalSales);
           ordersData.push(filteredOrders.length);
@@ -33,14 +32,11 @@ export const getOrderStatistics = async (req, res) => {
       if (type === 'monthly') {
         for (let i = 5; i >= 0; i--) {
           const month = moment().subtract(i, 'months');
-          const label = month.format('MMM'); // Jan, Feb...
-
+          const label = month.format('MMM');
           const filteredOrders = orders.filter(order =>
             moment(order.createdAt).isSame(month, 'month')
           );
-
-          const totalSales = filteredOrders.reduce((sum, order) => sum + order.amount, 0);
-
+          const totalSales = filteredOrders.reduce((sum, order) => sum + (Number(order.amount) || 0), 0);
           labels.push(label);
           salesData.push(totalSales);
           ordersData.push(filteredOrders.length);
@@ -51,13 +47,10 @@ export const getOrderStatistics = async (req, res) => {
         for (let i = 4; i >= 0; i--) {
           const year = moment().subtract(i, 'years');
           const label = year.format('YYYY');
-
           const filteredOrders = orders.filter(order =>
             moment(order.createdAt).isSame(year, 'year')
           );
-
-          const totalSales = filteredOrders.reduce((sum, order) => sum + order.amount, 0);
-
+          const totalSales = filteredOrders.reduce((sum, order) => sum + (Number(order.amount) || 0), 0);
           labels.push(label);
           salesData.push(totalSales);
           ordersData.push(filteredOrders.length);
@@ -71,18 +64,28 @@ export const getOrderStatistics = async (req, res) => {
       });
     }
 
-    // Nếu không có `type` thì trả về thống kê tổng quát
+    // Tổng quát
     const sales = orders.length;
-    const revenue = orders.reduce((sum, order) => sum + order.amount, 0);
+    const revenue = orders.reduce((sum, order) => sum + (Number(order.amount) || 0), 0);
 
-    const cost = orders.reduce((sum, order) => {
+    const cost = orders.reduce((sum, order, index) => {
+      if (!order.items || !Array.isArray(order.items) || order.items.length === 0) {
+        
+        return sum;
+      }
+    
       const orderCost = order.items.reduce((itemSum, item) => {
-        const itemCost = item.cost ? item.cost * item.quantity : item.price * 0.7 * item.quantity;
+        const itemCost = item.cost
+          ? item.cost * item.quantity
+          : item.price * 0.7 * item.quantity;
         return itemSum + itemCost;
       }, 0);
+    
       return sum + orderCost;
     }, 0);
-
+    
+    
+    
     const profit = revenue - cost;
 
     const deliveringOrders = await orderModel.countDocuments({
@@ -103,6 +106,6 @@ export const getOrderStatistics = async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting statistics:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

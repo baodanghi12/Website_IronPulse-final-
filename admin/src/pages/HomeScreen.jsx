@@ -147,7 +147,6 @@ const HomeScreen = () => {
 
       {/* Card phụ - nằm bên phải */}
 {/* Bọc cả Extra Stats */}
-{/* Bọc cả Extra Stats */}
 <div style={{ flex: '1 1 30%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
   {/* Extra Stats */}
   <Card className='mb-0' body={{ padding: '1rem' }}>

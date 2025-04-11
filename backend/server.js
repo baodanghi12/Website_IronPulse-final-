@@ -10,6 +10,8 @@ import orderRouter from './router/orderRoute.js';
 import PaymentRouter from './router/paymentRoute.js';
 import SupplierRouter from './router/supplierRoute.js';
 import statisticsRoutes from './router/statisticsRoutes.js'
+import reportRouter from './router/reportRouter.js'
+import adminRouter from './router/adminRouter.js'
 // import { logMiddleware } from './middleware/logMiddleware.js';
 // import LogModel from './models/LogModel.js';
 // import { createdAt } from '../admin/src/models/LogModel.js';
@@ -27,15 +29,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors())
 
 // app.use(logMiddleware);
+
 // api endpoints
 app.use('/api/user', userRouter)
 app.use('/api/product', productRouter)
 app.use('/api/cart', cartRouter)
 app.use('/api/order',orderRouter)
-
+app.use('/api/report', reportRouter)
 app.use('/payments', PaymentRouter)
 app.use('/supplier', SupplierRouter)
-app.use('/api/statistics', statisticsRoutes);
+app.use('/admin', adminRouter)
+app.use('/api/statistics', statisticsRoutes)
 // app.get('/logs', async (req, res) => {
     // try {
     //     const items = await LogModel.find()

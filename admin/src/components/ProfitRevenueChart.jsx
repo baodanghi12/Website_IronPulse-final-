@@ -57,7 +57,7 @@ const CustomTooltip = ({ active, payload, label }) => {
           boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
         }}
       >
-        <div style={{ fontSize: 12, color: '#999' }}>This Period</div>
+        <div style={{ fontSize: 12, color: '#999' }}>Sales</div>
         <div style={{ fontSize: 18, fontWeight: 600, color: '#2c3e50' }}>
           {formatCurrency(revenue)}
         </div>

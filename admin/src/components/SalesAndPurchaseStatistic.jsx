@@ -6,7 +6,7 @@ import { Line } from "react-chartjs-2";
 const SalesAndPurchaseStatistic = () => {
   
   const [timeTypeSelected, setTimeTypeSelected] = React.useState("weekly");
-
+  
   const options = {
     responsive: true,
     plugins: {
