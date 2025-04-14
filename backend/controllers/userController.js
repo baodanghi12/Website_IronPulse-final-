@@ -3,9 +3,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
 
-const createToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-};
+const token = jwt.sign({ id: process.env.ADMIN_ID }, process.env.JWT_SECRET);
+
 
 // USER LOGIN
 const loginUser = async (req, res) => {
@@ -76,31 +75,21 @@ const registerUser = async (req, res) => {
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await userModel.findOne({ email });
 
-    if (!user || user.role !== "admin")
-      return res.json({ success: false, message: "Access denied" });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.json({ success: false, message: "Invalid credentials" });
-
-    const token = createToken(user._id);
-
-    res.json({
-      success: true,
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
+    if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+      const token = jwt.sign({ id: process.env.ADMIN_ID }, process.env.JWT_SECRET);
+      res.json({ success: true, token });
+    } else {
+      res.json({ success: false, message: "Invalid credentials" });
+    }
   } catch (error) {
+    console.log(error);
     res.json({ success: false, message: error.message });
   }
 };
+
+
+
 
 //
 // ===== ADMIN CONTROL =====
