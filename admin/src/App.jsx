@@ -11,6 +11,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import HomeScreen from "./pages/HomeScreen";
 import ReportScreen from "./pages/ReportScreen"; // Giữ một lần import duy nhất
 import Actions from "./pages/Actions";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,6 +24,8 @@ import {
   LineElement,
 } from 'chart.js';
 import { BillsScreen } from "./pages";
+import PromotionScreen from "./pages/PromotionScreen";
+import UserManagement from "./pages/UserManagement";
 
 ChartJS.register(
   CategoryScale,
@@ -64,7 +67,9 @@ const App = () => {
               <Route path="/orders" element={<Orders token={token}/>} />
               <Route path="/revenue" element={<ReportScreen token={token}/>} />
               <Route path="/index" element={<BillsScreen token={token}/>} />
+              <Route path="/promotions" element={<PromotionScreen token={token}/>} />
               <Route path="/actions" element={<Actions token={token}/>} />
+              <Route path="/usermanagement" element={<UserManagement token={token}/>} />
             </Routes>
           </div>
           </div>

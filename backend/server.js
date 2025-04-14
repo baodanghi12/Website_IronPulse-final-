@@ -15,7 +15,8 @@ import adminRouter from './router/adminRouter.js'
 // import { logMiddleware } from './middleware/logMiddleware.js';
 // import LogModel from './models/LogModel.js';
 // import { createdAt } from '../admin/src/models/LogModel.js';
-
+import promotionRouter from './router/promotionRouter.js'
+import uploadRouter from './router/upload.js';
 // App Config
 const app = express();
 const port = process.env.PORT || 4000
@@ -40,25 +41,9 @@ app.use('/payments', PaymentRouter)
 app.use('/supplier', SupplierRouter)
 app.use('/admin', adminRouter)
 app.use('/api/statistics', statisticsRoutes)
-// app.get('/logs', async (req, res) => {
-    // try {
-    //     const items = await LogModel.find()
-    //     .sort({createdAt: -1})
-    //     .skip((pageNumber -1) * limitNumber)
-    //     .limit(limitNumber);
-
-    //     res.status(200).json({
-    //         message:'Logs',
-    //         data:{
-    //             items,
-    //             total: await LogModel.countDocuments(),
-    //         },
-    //     });
-    // } catch (error) {
-    //     res.status(404).json({message: 'Error'});
-    // }
-
-// });
+app.use('/api/upload', uploadRouter);
+app.use('/uploads', express.static('public/uploads'));
+app.use('/api/promotions', promotionRouter)
 
 
 app.get('/',(req,res)=>{

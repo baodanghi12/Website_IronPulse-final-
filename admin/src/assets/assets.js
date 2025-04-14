@@ -5,6 +5,8 @@ import upload_area from './upload_area.png'
 import parcel_icon from './parcel_icon.svg'
 import estd_2025 from './estd_2025.png'
 import Icon from './Icon.svg'
+import promotion from './promotion.png'
+import usermanagement from './user_management.png'
 
 export const assets = {
     logo,
@@ -13,6 +15,8 @@ export const assets = {
     upload_area,
     parcel_icon,
     estd_2025,
-    Icon
+    Icon,
+    promotion,
+    usermanagement
 }
 

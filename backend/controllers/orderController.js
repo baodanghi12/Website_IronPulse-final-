@@ -1,7 +1,7 @@
 import orderModel from "../models/orderModel.js"
 import userModel from "../models/userModel.js"
 import Stripe from "stripe"
-
+import Order from '../models/orderModel.js';
 // global variables
 const currency = "inr" // currency for stripe payment
 const deliveryCharges = 10 // delivery charges for stripe payment
@@ -169,4 +169,17 @@ const updateStatus = async (req,res) => {
     }
 }
 
-export { verifyStripe ,placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus}
+const getUserOrders = async (req, res) => {
+    try {
+      const orders = await Order.find({ userId: req.params.userId }); // Truy vấn đơn hàng theo userId
+      if (!orders || orders.length === 0) {
+        return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+      }
+      res.json({ orders }); // Trả về đơn hàng
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Failed to fetch orders' }); // Trả lỗi nếu có lỗi trong quá trình truy vấn
+    }
+  };
+
+export { verifyStripe ,placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus, getUserOrders,}

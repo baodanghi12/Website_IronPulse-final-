@@ -35,13 +35,17 @@ const Sidebar = () => {
                 <img className='w-5 h-5' src={assets.order_icon} alt="" />
                 <p className='hidden md:block'>Bills</p>
             </NavLink>
-            {/* <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/promotions">
-                <img className='w-5 h-5' src={assets.order_icon} alt="" />
+            <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/promotions">
+                <img className='w-5 h-5' src={assets.promotion} alt="" />
                 <p className='hidden md:block'>Promotions</p>
-            </NavLink> */}
+            </NavLink>
             <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/actions">
                 <img className='w-5 h-5' src={assets.order_icon} alt="" />
                 <p className='hidden md:block'>Actions</p>
+            </NavLink>
+            <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/usermanagement">
+                <img className='w-5 h-5' src={assets.usermanagement} alt="" />
+                <p className='hidden md:block'>User Management</p>
             </NavLink>
 
         </div>
