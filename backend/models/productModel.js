@@ -10,6 +10,7 @@
     sizes: { type: Array, required: true },
     bestSeller: { type: Boolean,},
     date: { type: Number, required: true },
+    colors: [String],
   });
 
   const productModel = mongoose.models.product || mongoose.model("product", productSchema);

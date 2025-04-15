@@ -12,6 +12,7 @@ import {
   Form,
   Tabs,
   Select,
+  DatePicker,
 } from 'antd';
 import {
   EditOutlined,
@@ -21,11 +22,12 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
-
+import moment from 'moment';
 const { TabPane } = Tabs;
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
+  
   const [isLoading, setIsLoading] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -33,6 +35,7 @@ const UserManagement = () => {
   const [modalMode, setModalMode] = useState('view'); // view | edit | create
   const [userOrders, setUserOrders] = useState([]);
   const [form] = Form.useForm();
+  
 
   useEffect(() => {
     fetchUsers();
@@ -52,24 +55,29 @@ const UserManagement = () => {
   };
 
   const handleViewUser = async (user) => {
-    setEditingUser(user);
-    setModalMode('view');
-    form.setFieldsValue(user);
-    setIsModalVisible(true);
+  setEditingUser(user);
+  setModalMode('view');
   
-    const userId = user._id;
-  
-    try {
-
-      const res = await axios.get(`/api/order/user/${userId}`, {
-      });
-      console.log("Response from API:", res.data);
-      setUserOrders(res.data.orders || []);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-      message.error('Error loading order history');
-    }
+  // Đảm bảo dateOfBirth được định dạng đúng trong trường hợp này
+  const updatedUser = {
+    ...user,
+    dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth).format('YYYY-MM-DD') : null,
   };
+  
+  form.setFieldsValue(updatedUser);  // Cập nhật lại giá trị của form với dữ liệu đã định dạng
+  setIsModalVisible(true);
+
+  const userId = user._id;
+
+  try {
+    const res = await axios.get(`/api/order/user/${userId}`);
+    console.log("Response from API:", res.data);
+    setUserOrders(res.data.orders || []);
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+    message.error('Error loading order history');
+  }
+};
   
   
   
@@ -77,7 +85,12 @@ const UserManagement = () => {
 
   const handleEditUser = (user) => {
     setEditingUser(user);
-    form.setFieldsValue(user);
+    const updatedUser = {
+      ...user,
+      // Chuyển đổi ngày tháng sang định dạng "yyyy-MM-dd"
+      dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth).format('YYYY-MM-DD') : null, 
+    };
+    form.setFieldsValue(updatedUser);  // Chỉ cần gọi một lần
     setModalMode('edit');
     setIsModalVisible(true);
   };
@@ -85,7 +98,7 @@ const UserManagement = () => {
   const handleCreateUser = () => {
     setEditingUser(null);
     form.resetFields();
-    form.setFieldsValue({ role: 'user', isBlocked: false });
+    form.setFieldsValue({ role: 'user', isBlocked: false, dateOfBirth: null, });
     setModalMode('create');
     setIsModalVisible(true);
   };
@@ -209,12 +222,23 @@ const UserManagement = () => {
         <Form.Item label="Date of Birth" name="dateOfBirth">
           <Input type="date" disabled={isView} />
         </Form.Item>
+        <Form.Item
+          label="Password"
+          name="password"
+          rules={[
+            { required: modalMode === 'create', message: 'Password is required' },
+            { min: 6, message: 'Password must be at least 6 characters' },
+          ]}
+        >
+          <Input.Password disabled={isView} />
+        </Form.Item>
         <Form.Item label="Role" name="role">
         <Select disabled={isView}>
           <Select.Option value="user">User</Select.Option>
           {/* Ẩn tùy chọn Admin nếu không muốn cho phép tạo user admin */}
           {/* <Select.Option value="admin">Admin</Select.Option> */}
         </Select>
+        
       </Form.Item>
         <Form.Item label="Status">
           <Input disabled value={form.getFieldValue('isBlocked') ? 'Locked' : 'Active'} />
