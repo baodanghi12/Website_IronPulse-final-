@@ -314,8 +314,7 @@ const UserManagement = () => {
                {
                  title: 'Date',
                  dataIndex: 'date',
-                 render: (d) =>
-                   d ? new Date(Number(d)).toLocaleString() : 'N/A',
+                 render: (d) => (d ? new Date(Number(d)).toLocaleString() : 'N/A'),
                },
                {
                  title: 'Status',
@@ -332,11 +331,7 @@ const UserManagement = () => {
                  title: 'Payment',
                  dataIndex: 'payment',
                  render: (paid) =>
-                   paid ? (
-                     <Tag color="green">Paid</Tag>
-                   ) : (
-                     <Tag color="red">Unpaid</Tag>
-                   ),
+                   paid ? <Tag color="green">Paid</Tag> : <Tag color="red">Unpaid</Tag>,
                },
                {
                  title: 'Method',
@@ -357,7 +352,7 @@ const UserManagement = () => {
                  title: 'Items',
                  dataIndex: 'items',
                  render: (items) =>
-                   items.map((item, idx) => (
+                   (items || []).map((item, idx) => (  // Check to ensure items is an array before calling map
                      <div key={idx}>
                        {item.name} x{item.quantity}
                      </div>
@@ -370,6 +365,8 @@ const UserManagement = () => {
              scroll={{ x: 'max-content' }} 
            />
          </TabPane>
+         
+         
           
           
           )}
