@@ -170,16 +170,25 @@ const updateStatus = async (req,res) => {
 }
 
 const getUserOrders = async (req, res) => {
+    const userId = req.params.userId; // Lấy userId từ tham số URL
+  
     try {
-      const orders = await Order.find({ userId: req.params.userId }); // Truy vấn đơn hàng theo userId
-      if (!orders || orders.length === 0) {
-        return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+      // Truy vấn các đơn hàng của người dùng từ cơ sở dữ liệu
+      const orders = await Order.find({ userId: userId });
+  
+      if (!orders) {
+        return res.status(404).json({ message: 'No orders found for this user' });
       }
-      res.json({ orders }); // Trả về đơn hàng
+  
+      // Trả về danh sách đơn hàng nếu tìm thấy
+      res.status(200).json({ orders });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Failed to fetch orders' }); // Trả lỗi nếu có lỗi trong quá trình truy vấn
+      res.status(500).json({ message: 'Server Error' });
     }
   };
-
+  
+  
+  
+  
 export { verifyStripe ,placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus, getUserOrders,}

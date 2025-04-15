@@ -23,10 +23,10 @@ orderRouter.post('/status', adminAuth, updateStatus);
 orderRouter.post('/place', authUser, placeOrder);
 orderRouter.post('/stripe', authUser, placeOrderStripe);
 orderRouter.post('/razorpay', authUser, placeOrderRazorpay);
-
+  
 // User Features
 orderRouter.post('/userorders', authUser, userOrders);
-orderRouter.get('/user/:userId', authUser, getUserOrders); // Trực tiếp sử dụng `getUserOrders` từ controller
+orderRouter.get('/user/:userId', getUserOrders); // Trực tiếp sử dụng `getUserOrders` từ controller
 
 // Verify Payment
 orderRouter.post('/verifyStripe', authUser, verifyStripe);

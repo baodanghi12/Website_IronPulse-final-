@@ -10,9 +10,6 @@ const adminAuth = async (req, res, next) => {
 
         // Nếu có token, tiếp tục xử lý
         const token_decode = jwt.verify(token, process.env.JWT_SECRET);
-        
-        // Kiểm tra token giải mã
-        console.log(token_decode); // Thêm log để xem giá trị token_decode
 
         // Kiểm tra quyền truy cập của admin
         if (token_decode.id !== process.env.ADMIN_ID) {

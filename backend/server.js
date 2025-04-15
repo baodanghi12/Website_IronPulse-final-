@@ -41,7 +41,7 @@ app.use('/payments', PaymentRouter)
 app.use('/supplier', SupplierRouter)
 app.use('/admin', adminRouter)
 app.use('/api/statistics', statisticsRoutes)
-app.use('/api/upload', uploadRouter);
+app.use('/api/upload', uploadRouter)
 app.use('/uploads', express.static('public/uploads'));
 app.use('/api/promotions', promotionRouter)
 

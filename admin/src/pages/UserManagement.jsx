@@ -56,8 +56,24 @@ const UserManagement = () => {
     setModalMode('view');
     form.setFieldsValue(user);
     setIsModalVisible(true);
+  
+    const userId = user._id;
+  
+    try {
 
+      const res = await axios.get(`/api/order/user/${userId}`, {
+      });
+      console.log("Response from API:", res.data);
+      setUserOrders(res.data.orders || []);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      message.error('Error loading order history');
+    }
   };
+  
+  
+  
+  
 
   const handleEditUser = (user) => {
     setEditingUser(user);
@@ -78,7 +94,7 @@ const UserManagement = () => {
     try {
       await axios.put(`/api/user/${user._id}/block`, {
         isBlocked: !user.isBlocked,
-      });
+      }); 
       message.success(`${user.isBlocked ? 'Unblocked' : 'Blocked'} successfully`);
       fetchUsers();
     } catch (err) {
@@ -263,33 +279,75 @@ const UserManagement = () => {
           </TabPane>
 
           {modalMode === 'view' && (
-            <TabPane tab="Order History" key="2">
-              <Table
-                columns={[
-                  { title: 'Order ID', dataIndex: '_id' },
-                  {
-                    title: 'Date',
-                    dataIndex: 'date',
-                    render: (d) => new Date(Number(d)).toLocaleString(),
-                  },
-                  { title: 'Status', dataIndex: 'status' },
-                  { title: 'Payment', dataIndex: 'paymentMethod' },
-                  {
-                    title: 'Items',
-                    dataIndex: 'items',
-                    render: (items) =>
-                      items.map((item, index) => (
-                        <div key={index}>
-                          {item.name} x{item.amount}
-                        </div>
-                      )),
-                  },
-                ]}
-                dataSource={userOrders}
-                rowKey="_id"
-                pagination={false}
-              />
-            </TabPane>
+           <TabPane tab="Order History" key="2">
+           <Table
+             columns={[
+               {
+                 title: 'Order ID',
+                 dataIndex: '_id',
+                 render: (id) => <Tag color="blue">{id.slice(-6).toUpperCase()}</Tag>, // rút gọn ID cho gọn
+               },
+               {
+                 title: 'Date',
+                 dataIndex: 'date',
+                 render: (d) =>
+                   d ? new Date(Number(d)).toLocaleString() : 'N/A',
+               },
+               {
+                 title: 'Status',
+                 dataIndex: 'status',
+                 render: (status) => {
+                   let color = 'blue';
+                   if (status === 'Delivered') color = 'green';
+                   else if (status === 'Pending') color = 'orange';
+                   else if (status === 'Canceled') color = 'red';
+                   return <Tag color={color}>{status}</Tag>;
+                 },
+               },
+               {
+                 title: 'Payment',
+                 dataIndex: 'payment',
+                 render: (paid) =>
+                   paid ? (
+                     <Tag color="green">Paid</Tag>
+                   ) : (
+                     <Tag color="red">Unpaid</Tag>
+                   ),
+               },
+               {
+                 title: 'Method',
+                 dataIndex: 'paymentMethod',
+                 render: (method) =>
+                   method === 'COD' ? 'Cash on Delivery' : 'Online Payment',
+               },
+               {
+                 title: 'Amount',
+                 dataIndex: 'amount',
+                 render: (amount) =>
+                   amount?.toLocaleString('vi-VN', {
+                     style: 'currency',
+                     currency: 'VND',
+                   }) || '0₫',
+               },
+               {
+                 title: 'Items',
+                 dataIndex: 'items',
+                 render: (items) =>
+                   items.map((item, idx) => (
+                     <div key={idx}>
+                       {item.name} x{item.quantity}
+                     </div>
+                   )),
+               },
+             ]}
+             dataSource={userOrders}
+             rowKey="_id"
+             pagination={false}
+             scroll={{ x: 'max-content' }} 
+           />
+         </TabPane>
+          
+          
           )}
         </Tabs>
       </Modal>
