@@ -6,8 +6,8 @@ const addProduct =async (req, res) => {
     try {
         console.log("Files received: ", req.files);
 
-        const { name, description, price, category, subCategory, sizes, bestseller } = req.body;
-
+        const { name, description, price, category, subCategory, sizes, bestseller, colors } = req.body;
+        const parsedColors = JSON.parse(colors);
         const image1 = req.files.image1 && req.files.image1[0]
         const image2 = req.files.image2 && req.files.image2[0]
         const image3 = req.files.image3 && req.files.image3[0]
@@ -32,11 +32,10 @@ const addProduct =async (req, res) => {
             subCategory,
             sizes: JSON.parse(sizes),
             bestSeller: bestseller === "true" ? true : false,
-            colors: JSON.parse(colors),
+            colors: parsedColors,
             date: Date.now()
         }
 
-        console.log("Product Data: ", productData)
 
         const product = new productModel(productData)
         await product.save()
@@ -88,5 +87,113 @@ const singleProduct =async (req, res) => {
         res.json({success: false, message: error.message})
     }
 }
+const editProduct = async (req, res) => {
+    console.log('Received files:', req.files);
+    try {
+        const {
+            name,
+            price,
+            sizes,
+            colors,
+            description,
+            category,
+            subCategory,
+            bestSeller,
+            flashSale,
+        } = req.body;
 
-export {listProducts, addProduct, removeProduct, singleProduct}
+        const productId = req.params.productId;
+
+        // Kiểm tra sản phẩm có tồn tại không
+        const existingProduct = await productModel.findById(productId);
+        if (!existingProduct) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found',
+            });
+        }
+
+        // Khởi tạo object chứa thông tin cập nhật
+        const updateData = {};
+
+        // Cập nhật nếu có dữ liệu
+        if (name != null) updateData.name = name;
+        if (description != null) updateData.description = description;
+        if (price != null) updateData.price = price;
+
+        if (sizes != null) {
+            try {
+                updateData.sizes = typeof sizes === 'string' ? JSON.parse(sizes) : sizes;
+            } catch (err) {
+                console.error("Error parsing sizes:", err);
+            }
+        }
+
+        if (colors != null) {
+            try {
+                updateData.colors = typeof colors === 'string' ? JSON.parse(colors) : colors;
+            } catch (err) {
+                console.error("Error parsing colors:", err);
+            }
+        }
+
+        if (category != null) updateData.category = category;
+        if (subCategory != null) updateData.subCategory = subCategory;
+        if (bestSeller != null) updateData.bestSeller = bestSeller;
+        if (flashSale != null) updateData.flashSale = flashSale;
+
+        // Xử lý ảnh nếu có upload
+        const images = req.files ? Object.values(req.files).map(file => file[0].path) : [];
+
+        if (images.length > 0) {
+            updateData.image = images;
+        }
+
+        // DEBUG: Kiểm tra dữ liệu gửi lên
+        console.log("Update data for product:", productId);
+        console.log(updateData);
+
+        // Nếu không có gì để cập nhật, trả về lỗi
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No valid data provided to update',
+            });
+        }
+
+        // Thực hiện cập nhật
+        const updatedProduct = await productModel.findByIdAndUpdate(productId, updateData, {
+            new: true,
+            runValidators: true,
+        });
+
+        // Kiểm tra kết quả
+        if (!updatedProduct) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found for update',
+            });
+        }
+
+        // Thành công
+        return res.status(200).json({
+            success: true,
+            message: 'Product updated successfully',
+            product: updatedProduct,
+        });
+    } catch (error) {
+        console.error('Error updating product:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'An error occurred while updating the product',
+            error: error.message,
+        });
+    }
+};
+
+
+  
+
+
+
+export {listProducts, addProduct, removeProduct, singleProduct, editProduct,}

@@ -7,6 +7,7 @@ import estd_2025 from './estd_2025.png'
 import Icon from './Icon.svg'
 import promotion from './promotion.png'
 import usermanagement from './user_management.png'
+import cod_icon from './cod_icon.png'
 
 export const assets = {
     logo,
@@ -17,6 +18,7 @@ export const assets = {
     estd_2025,
     Icon,
     promotion,
-    usermanagement
+    usermanagement,
+    cod_icon,
 }
 

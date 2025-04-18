@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import 'dotenv/config'
+
 import connectDB from './config/mongodb.js';
 import connectCloudinary from './config/cloudinary.js';
 import userRouter from './router/userRoute.js';
@@ -44,8 +45,9 @@ app.use('/api/statistics', statisticsRoutes)
 app.use('/api/upload', uploadRouter)
 app.use('/uploads', express.static('public/uploads'));
 app.use('/api/promotions', promotionRouter)
-
-
+// parse du lieu json
+app.use(express.json()); // Parse JSON body
+app.use(express.urlencoded({ extended: true }));
 app.get('/',(req,res)=>{
     res.send("API Working")
 })

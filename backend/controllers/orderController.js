@@ -155,19 +155,29 @@ const userOrders = async (req,res) => {
 }
 
 // update Orders status from Admin Panel
-const updateStatus = async (req,res) => {
+const updateStatus = async (req, res) => {
     try {
-        
-        const {orderId, status} = req.body
-
-        await orderModel.findByIdAndUpdate(orderId, {status})
-        res.json({success:true,message:"Order Status Updated"})
-
+      const { orderId, status, payment } = req.body;
+  
+      const updateFields = {};
+      if (status) updateFields.status = status;
+      if (typeof payment !== 'undefined') updateFields.payment = payment;
+  
+      const result = await orderModel.findByIdAndUpdate(orderId, updateFields, { new: true });
+  
+      if (!result) {
+        return res.status(404).json({ success: false, message: "Order không tồn tại" });
+      }
+  
+      res.json({ success: true, message: "Cập nhật trạng thái và thanh toán thành công", order: result });
     } catch (error) {
-        console.log(error);
-        res.json({success:false,message:error.message})
+      console.log(error);
+      res.status(500).json({ success: false, message: error.message });
     }
-}
+  };
+  
+  
+  
 
 const getUserOrders = async (req, res) => {
     const userId = req.params.userId; // Lấy userId từ tham số URL
