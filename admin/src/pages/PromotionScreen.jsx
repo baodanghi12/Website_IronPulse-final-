@@ -7,16 +7,15 @@ import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
 const { confirm } = Modal;
 
-const PromotionScreen = () => {
+const PromotionScreen = ({ role }) => {  // Accept role prop from App.jsx
 	const [isVisibleModalAddPromotion, setIsVisibleModalAddPromotion] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [promotions, setPromotions] = useState([]);
 	const [promotionSelected, setPromotionSelected] = useState(null);
-
 	useEffect(() => {
-		getPromotions();
+		getPromotions(); // Load data when entering the screen
 	}, []);
-
+	
 	const getPromotions = async () => {
 		setIsLoading(true);
 		try {
@@ -129,38 +128,31 @@ const PromotionScreen = () => {
 			  
 		},
 	];
-
 	return (
 		<div className='container py-4'>
-			<div className='d-flex justify-content-between align-items-center mb-3'>
-				
-				<Button
-					type='primary'
-					
-					onClick={() => {
-						setPromotionSelected(null); // Clear selected when adding new
-						setIsVisibleModalAddPromotion(true);
-					}}
-				>
-					Add Promotion
-				</Button>
-			</div>
+		  <div className='d-flex justify-content-between align-items-center mb-3'>
+			{/* Hiển thị nút "Add Promotion" chỉ khi role là admin */}
+			{role === 'admin' && (
+			  <Button
+				type='primary'
+				onClick={() => {
+				  setPromotionSelected(null);
+				  setIsVisibleModalAddPromotion(true);
+				}}
+			  >
+				Add Promotion
+			  </Button>
+			)}
+		  </div>
 
-			<Table
-				loading={isLoading}
-				columns={columns}
-				dataSource={promotions}
-				rowKey='_id' // Ensure unique key for each row
-			/>
+		  <Table loading={isLoading} columns={columns} dataSource={promotions} rowKey='_id' />
 
-			{/* 👉 MODAL HERE 👇 */}
-			<AddPromotion
-				promotion={promotionSelected}
-				onAddNew={async () => await getPromotions()}
-				visible={isVisibleModalAddPromotion}
-				onClose={() => setIsVisibleModalAddPromotion(false)}
-			/>
-			
+		  <AddPromotion
+			promotion={promotionSelected}
+			onAddNew={async () => await getPromotions()}
+			visible={isVisibleModalAddPromotion}
+			onClose={() => setIsVisibleModalAddPromotion(false)}
+		  />
 		</div>
 	);
 };

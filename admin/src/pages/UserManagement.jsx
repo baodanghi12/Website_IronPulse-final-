@@ -1,4 +1,3 @@
-/** @format */
 import { useEffect, useState } from 'react';
 import {
   Table,
@@ -25,9 +24,9 @@ import axios from 'axios';
 import moment from 'moment';
 const { TabPane } = Tabs;
 
-const UserManagement = () => {
+const UserManagement = ({ role }) => {
   const [users, setUsers] = useState([]);
-  
+  const [staff, setStaff] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -35,17 +34,21 @@ const UserManagement = () => {
   const [modalMode, setModalMode] = useState('view'); // view | edit | create
   const [userOrders, setUserOrders] = useState([]);
   const [form] = Form.useForm();
+  const [userInfo, setUserInfo] = useState(null);
   
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsersAndStaff();
   }, []);
 
-  const fetchUsers = async () => {
+  
+
+  const fetchUsersAndStaff = async () => {
     setIsLoading(true);
     try {
       const res = await axios.get('/api/user');
-      setUsers(res.data?.users || []);
+      setUsers(res.data?.users.filter(user => user.role === 'user') || []);
+      setStaff(res.data?.users.filter(user => user.role === 'staff') || []);
     } catch (err) {
       console.error(err);
       message.error('Error loading user list');
@@ -55,85 +58,31 @@ const UserManagement = () => {
   };
 
   const handleViewUser = async (user) => {
-  setEditingUser(user);
-  setModalMode('view');
-  
-  // Đảm bảo dateOfBirth được định dạng đúng trong trường hợp này
-  const updatedUser = {
-    ...user,
-    dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth).format('YYYY-MM-DD') : null,
-  };
-  
-  form.setFieldsValue(updatedUser);  // Cập nhật lại giá trị của form với dữ liệu đã định dạng
-  setIsModalVisible(true);
-
-  const userId = user._id;
-
-  try {
-    const res = await axios.get(`/api/order/user/${userId}`);
-    console.log("Response from API:", res.data);
-    setUserOrders(res.data.orders || []);
-  } catch (err) {
-    console.error("Error fetching orders:", err);
-    message.error('Error loading order history');
-  }
-};
-  
-  
-  
-  
-
-  const handleEditUser = (user) => {
     setEditingUser(user);
+    setModalMode('view');
     const updatedUser = {
       ...user,
-      // Chuyển đổi ngày tháng sang định dạng "yyyy-MM-dd"
-      dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth).format('YYYY-MM-DD') : null, 
+      dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth).format('YYYY-MM-DD') : null,
     };
-    form.setFieldsValue(updatedUser);  // Chỉ cần gọi một lần
-    setModalMode('edit');
+    form.setFieldsValue(updatedUser);
     setIsModalVisible(true);
+
+    const userId = user._id;
+
+    try {
+      const res = await axios.get(`/api/order/user/${userId}`);
+      setUserOrders(res.data.orders || []);
+    } catch (err) {
+      message.error('Error loading order history');
+    }
   };
 
   const handleCreateUser = () => {
     setEditingUser(null);
     form.resetFields();
-    form.setFieldsValue({ role: 'user', isBlocked: false, dateOfBirth: null, });
+    form.setFieldsValue({ role: 'user', isBlocked: false, dateOfBirth: null });
     setModalMode('create');
     setIsModalVisible(true);
-  };
-
-  const handleBlockToggle = async (user) => {
-    try {
-      await axios.put(`/api/user/${user._id}/block`, {
-        isBlocked: !user.isBlocked,
-      }); 
-      message.success(`${user.isBlocked ? 'Unblocked' : 'Blocked'} successfully`);
-      fetchUsers();
-    } catch (err) {
-      console.error(err);
-      message.error('Cannot update user status');
-    }
-  };
-
-  const handleDeleteUser = async (user) => {
-    Modal.confirm({
-      title: 'Confirm delete',
-      content: `Are you sure you want to delete "${user.name}"?`,
-      okText: 'Delete',
-      cancelText: 'Cancel',
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          await axios.delete(`/api/user/${user._id}`);
-          message.success('Deleted successfully');
-          fetchUsers();
-        } catch (err) {
-          console.error(err);
-          message.error('Error deleting user');
-        }
-      },
-    });
   };
 
   const handleSaveUser = async () => {
@@ -147,9 +96,8 @@ const UserManagement = () => {
         message.success('User created successfully');
       }
       setIsModalVisible(false);
-      fetchUsers();
+      fetchUsersAndStaff();
     } catch (err) {
-      console.error(err);
       message.error(err.response?.data?.message || 'Operation failed');
     }
   };
@@ -162,8 +110,8 @@ const UserManagement = () => {
         <Avatar
           src={avatar || '/default-avatar.png'}
           onClick={(e) => {
-            e.stopPropagation(); // Ngăn event lan ra hàng
-            handleViewUser(user); // Hiển thị modal khi click avatar
+            e.stopPropagation(); // Prevent event propagation
+            handleViewUser(user); // Open modal when clicking avatar
           }}
           style={{ cursor: 'pointer' }}
         />
@@ -187,7 +135,7 @@ const UserManagement = () => {
       title: 'Action',
       render: (user) => (
         <Space>
-          <Button icon={<EditOutlined />} onClick={() => handleEditUser(user)} />
+          <Button icon={<EditOutlined />} onClick={() => handleViewUser(user)} />
           <Button
             icon={user.isBlocked ? <CheckCircleOutlined /> : <StopOutlined />}
             onClick={() => handleBlockToggle(user)}
@@ -198,53 +146,16 @@ const UserManagement = () => {
     },
   ];
 
-  const filteredUsers = users
-  .filter((user) => user.role === 'user') // Lọc chỉ lấy user có role là 'user'
-  .filter(
-    (user) =>
-      user.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchValue.toLowerCase())
-  );
-
-  const renderFormFields = () => {
-    const isView = modalMode === 'view';
-    return (
-      <>
-        <Form.Item label="Name" name="name" rules={[{ required: true }]}>
-          <Input disabled={isView} />
-        </Form.Item>
-        <Form.Item label="Email" name="email" rules={[{ required: true }]}>
-          <Input disabled={isView} />
-        </Form.Item>
-        <Form.Item label="Phone" name="phone">
-          <Input disabled={isView} />
-        </Form.Item>
-        <Form.Item label="Date of Birth" name="dateOfBirth">
-          <Input type="date" disabled={isView} />
-        </Form.Item>
-        <Form.Item
-          label="Password"
-          name="password"
-          rules={[
-            { required: modalMode === 'create', message: 'Password is required' },
-            { min: 6, message: 'Password must be at least 6 characters' },
-          ]}
-        >
-          <Input.Password disabled={isView} />
-        </Form.Item>
-        <Form.Item label="Role" name="role">
-        <Select disabled={isView}>
-          <Select.Option value="user">User</Select.Option>
-          {/* Ẩn tùy chọn Admin nếu không muốn cho phép tạo user admin */}
-          {/* <Select.Option value="admin">Admin</Select.Option> */}
-        </Select>
-        
-      </Form.Item>
-        <Form.Item label="Status">
-          <Input disabled value={form.getFieldValue('isBlocked') ? 'Locked' : 'Active'} />
-        </Form.Item>
-      </>
-    );
+  const handleBlockToggle = async (user) => {
+    try {
+      await axios.put(`/api/user/${user._id}/block`, {
+        isBlocked: !user.isBlocked,
+      });
+      message.success(`${user.isBlocked ? 'Unblocked' : 'Blocked'} successfully`);
+      fetchUsersAndStaff();
+    } catch (err) {
+      message.error('Cannot update user status');
+    }
   };
 
   return (
@@ -262,24 +173,40 @@ const UserManagement = () => {
         </Button>
       </Space>
 
-      <Table
-        loading={isLoading}
-        dataSource={filteredUsers}
-        columns={columns}
-        rowKey="_id"
-        scroll={{ x: true }}
-        
-      />
+      <Tabs defaultActiveKey="1">
+        <TabPane tab="Users" key="1">
+          <Table
+            loading={isLoading}
+            dataSource={users.filter((user) =>
+              user.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+              user.email?.toLowerCase().includes(searchValue.toLowerCase())
+            )}
+            columns={columns}
+            rowKey="_id"
+            scroll={{ x: true }}
+          />
+        </TabPane>
+
+        {/* Conditionally render the "Staff" tab based on role */}
+        {role === 'admin' && (
+  <TabPane tab="Staff" key="2">
+    <Table
+      loading={isLoading}
+      dataSource={staff.filter((user) =>
+        user.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchValue.toLowerCase())
+      )}
+      columns={columns}
+      rowKey="_id"
+      scroll={{ x: true }}
+    />
+  </TabPane>
+)}
+      </Tabs>
 
       <Modal
         open={isModalVisible}
-        title={
-          modalMode === 'create'
-            ? 'Create New User'
-            : modalMode === 'edit'
-            ? 'Edit User'
-            : 'User Details'
-        }
+        title={modalMode === 'create' ? 'Create New User' : modalMode === 'edit' ? 'Edit User' : 'User Details'}
         onCancel={() => {
           setIsModalVisible(false);
           setModalMode('view');
@@ -295,82 +222,36 @@ const UserManagement = () => {
               ]
         }
       >
-        <Tabs defaultActiveKey="1">
-          <TabPane tab="User Info" key="1">
-            <Form layout="vertical" form={form}>
-              {renderFormFields()}
-            </Form>
-          </TabPane>
-
-          {modalMode === 'view' && (
-           <TabPane tab="Order History" key="2">
-           <Table
-             columns={[
-               {
-                 title: 'Order ID',
-                 dataIndex: '_id',
-                 render: (id) => <Tag color="blue">{id.slice(-6).toUpperCase()}</Tag>, // rút gọn ID cho gọn
-               },
-               {
-                 title: 'Date',
-                 dataIndex: 'date',
-                 render: (d) => (d ? new Date(Number(d)).toLocaleString() : 'N/A'),
-               },
-               {
-                 title: 'Status',
-                 dataIndex: 'status',
-                 render: (status) => {
-                   let color = 'blue';
-                   if (status === 'Delivered') color = 'green';
-                   else if (status === 'Pending') color = 'orange';
-                   else if (status === 'Canceled') color = 'red';
-                   return <Tag color={color}>{status}</Tag>;
-                 },
-               },
-               {
-                 title: 'Payment',
-                 dataIndex: 'payment',
-                 render: (paid) =>
-                   paid ? <Tag color="green">Paid</Tag> : <Tag color="red">Unpaid</Tag>,
-               },
-               {
-                 title: 'Method',
-                 dataIndex: 'paymentMethod',
-                 render: (method) =>
-                   method === 'COD' ? 'Cash on Delivery' : 'Online Payment',
-               },
-               {
-                 title: 'Amount',
-                 dataIndex: 'amount',
-                 render: (amount) =>
-                   amount?.toLocaleString('vi-VN', {
-                     style: 'currency',
-                     currency: 'VND',
-                   }) || '0₫',
-               },
-               {
-                 title: 'Items',
-                 dataIndex: 'items',
-                 render: (items) =>
-                   (items || []).map((item, idx) => (  // Check to ensure items is an array before calling map
-                     <div key={idx}>
-                       {item.name} x{item.quantity}
-                     </div>
-                   )),
-               },
-             ]}
-             dataSource={userOrders}
-             rowKey="_id"
-             pagination={false}
-             scroll={{ x: 'max-content' }} 
-           />
-         </TabPane>
-         
-         
-          
-          
-          )}
-        </Tabs>
+        <Form layout="vertical" form={form}>
+          <Form.Item label="Name" name="name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Email" name="email" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Phone" name="phone">
+            <Input />
+          </Form.Item>
+          <Form.Item label="Date of Birth" name="dateOfBirth">
+            <Input type="date" />
+          </Form.Item>
+          <Form.Item label="Password" name="password">
+            <Input.Password />
+          </Form.Item>
+          <Form.Item label="Role" name="role" initialValue="user">
+  {role === 'staff' ? (
+    <Input value="user" disabled />  // Nếu là Staff, chỉ có thể chọn User và không thể thay đổi
+  ) : (
+    <Select>
+      <Select.Option value="user">User</Select.Option>
+      <Select.Option value="staff">Staff</Select.Option>
+    </Select>
+  )}
+</Form.Item>
+          <Form.Item label="Status">
+            <Input disabled value={form.getFieldValue('isBlocked') ? 'Locked' : 'Active'} />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

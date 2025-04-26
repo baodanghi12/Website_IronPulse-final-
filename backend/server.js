@@ -13,6 +13,8 @@ import SupplierRouter from './router/supplierRoute.js';
 import statisticsRoutes from './router/statisticsRoutes.js'
 import reportRouter from './router/reportRouter.js'
 import adminRouter from './router/adminRouter.js'
+import notificationRoute from './router/notificationRoute.js';
+import importRoutes from './router/importRoutes.js'
 // import { logMiddleware } from './middleware/logMiddleware.js';
 // import LogModel from './models/LogModel.js';
 // import { createdAt } from '../admin/src/models/LogModel.js';
@@ -34,6 +36,7 @@ app.use(cors())
 
 // api endpoints
 app.use('/api/user', userRouter)
+app.use('/api/imports', importRoutes);
 app.use('/api/product', productRouter)
 app.use('/api/cart', cartRouter)
 app.use('/api/order',orderRouter)
@@ -45,9 +48,8 @@ app.use('/api/statistics', statisticsRoutes)
 app.use('/api/upload', uploadRouter)
 app.use('/uploads', express.static('public/uploads'));
 app.use('/api/promotions', promotionRouter)
-// parse du lieu json
-app.use(express.json()); // Parse JSON body
-app.use(express.urlencoded({ extended: true }));
+app.use('/api/notifications', notificationRoute);
+
 app.get('/',(req,res)=>{
     res.send("API Working")
 })

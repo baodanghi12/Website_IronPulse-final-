@@ -10,19 +10,27 @@ const Login = ({setToken}) => {
 
     const onSubmitHandler = async (e) => {
         try {
-            e.preventDefault();
-            const response = await axios.post(backendUrl + '/api/user/admin',{email, password})
-            if (response.data.success) {
-                setToken(response.data.token)
-            } else {
-                toast.error(response.data.message)
-            }
+          e.preventDefault();
+          const response = await axios.post(backendUrl + '/api/user/login', { email, password });
+      
+          if (response.data.success) {
+            setToken(response.data.token);
+            localStorage.setItem('role', response.data.role);
             
+            if (response.data.role === 'admin') {
+              // navigate to admin dashboard
+            } else if (response.data.role === 'staff') {
+              // navigate to staff dashboard
+            }
+          }
+          
+      
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+          console.log(error);
+          toast.error(error.message);
         }
-    }
+      };
+      
 
   return (
     <div className='min-h-screen flex items-center justify-center w-full'>

@@ -7,11 +7,13 @@ import {
   userOrders, 
   updateStatus, 
   verifyStripe, 
-  getUserOrders 
+  getUserOrders,
+  
 } from '../controllers/orderController.js';  // Import các controller trực tiếp từ file
 
 import adminAuth from '../middleware/adminAuth.js';
 import authUser from '../middleware/auth.js';
+
 
 const orderRouter = express.Router();
 
@@ -26,8 +28,7 @@ orderRouter.post('/razorpay', authUser, placeOrderRazorpay);
   
 // User Features
 orderRouter.post('/userorders', authUser, userOrders);
-orderRouter.get('/user/:userId', getUserOrders); // Trực tiếp sử dụng `getUserOrders` từ controller
-
+orderRouter.get('/user/:userId',  getUserOrders); // Trực tiếp sử dụng `getUserOrders` từ controller
 // Verify Payment
 orderRouter.post('/verifyStripe', authUser, verifyStripe);
 

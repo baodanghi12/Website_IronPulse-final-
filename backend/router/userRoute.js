@@ -2,7 +2,8 @@ import express from 'express';
 import {
   loginUser,
   registerUser,
-  adminLogin,
+  // staffLogin,
+  // adminLogin,
   getAllUsers,
   deleteUser,
   updateUserRole,
@@ -18,9 +19,6 @@ const userRouter = express.Router();
 // USER
 userRouter.post('/register', registerUser);
 userRouter.post('/login', loginUser);
-
-// ADMIN
-userRouter.post('/admin', adminLogin);
 
 // ADMIN - USER MANAGEMENT
 userRouter.get('/', getAllUsers);              // GET all users

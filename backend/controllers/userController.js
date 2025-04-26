@@ -2,7 +2,7 @@
   import bcrypt from "bcrypt";
   import jwt from "jsonwebtoken";
   import userModel from "../models/userModel.js";
-
+  import { createNotification } from '../utils/createNotification.js';
   const token = jwt.sign({ id: process.env.ADMIN_ID }, process.env.JWT_SECRET);
 
 
@@ -18,20 +18,18 @@
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return res.json({ success: false, message: "Invalid credentials" });
 
-      const token = createToken(user._id);
-
-      res.json({
-        success: true,
-        token,
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          avatar: user.avatar,
+      const token = jwt.sign(
+        {
+          id: user._id,
+          role: user.role, // role: 'admin' | 'staff' | ...
         },
-      });
+        process.env.JWT_SECRET,
+        { expiresIn: '1d' }
+      );
+  
+      res.json({ success: true, token, role: user.role });
     } catch (error) {
+      console.log(error);
       res.json({ success: false, message: error.message });
     }
   };
@@ -70,23 +68,53 @@
       res.json({ success: false, message: error.message });
     }
   };
+// // STAFF LOGIN
+// const staffLogin = async (req, res) => {
+//   const { email, password } = req.body;
 
-  // ADMIN LOGIN
-  const adminLogin = async (req, res) => {
-    try {
-      const { email, password } = req.body;
+//   try {
+//       const user = await User.findOne({ email });
 
-      if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-        const token = jwt.sign({ id: process.env.ADMIN_ID }, process.env.JWT_SECRET);
-        res.json({ success: true, token });
-      } else {
-        res.json({ success: false, message: "Invalid credentials" });
-      }
-    } catch (error) {
-      console.log(error);
-      res.json({ success: false, message: error.message });
-    }
-  };
+//       if (!user) {
+//           return res.status(400).json({ success: false, message: 'User not found' });
+//       }
+
+//       const isMatch = await bcrypt.compare(password, user.password);
+
+//       if (!isMatch) {
+//           return res.status(400).json({ success: false, message: 'Invalid credentials' });
+//       }
+
+//       // Check role for staff
+//       if (user.role !== 'staff') {
+//           return res.status(403).json({ success: false, message: 'Access denied' });
+//       }
+
+//       const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+//       res.json({ success: true, token });
+//   } catch (error) {
+//       res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// };
+
+
+//   // ADMIN LOGIN
+//   const adminLogin = async (req, res) => {
+//     try {
+//       const { email, password } = req.body;
+
+//       if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+//         const token = jwt.sign({ id: process.env.ADMIN_ID }, process.env.JWT_SECRET);
+//         res.json({ success: true, token });
+//       } else {
+//         res.json({ success: false, message: "Invalid credentials" });
+//       }
+//     } catch (error) {
+//       console.log(error);
+//       res.json({ success: false, message: error.message });
+//     }
+//   };
 
 
 
@@ -114,7 +142,7 @@
       if (existing) {
         return res.status(400).json({ message: 'Email already exists' });
       }
-  
+      const hashedPassword = await bcrypt.hash(password, 10);
       // Convert dateOfBirth to Date object
       const dob = dateOfBirth ? new Date(dateOfBirth) : null;
   
@@ -122,7 +150,7 @@
         name,
         email,
         phone,
-        password, // Bcrypt mã hóa nếu cần
+        password: hashedPassword, // Bcrypt mã hóa nếu cần
         role: role || 'user',
         avatar,
         isBlocked: isBlocked || false,
@@ -144,6 +172,11 @@
       const { id } = req.params;
       await userModel.findByIdAndDelete(id);
       res.json({ success: true, message: "User deleted successfully" });
+      await createNotification({
+        title: `🗑 Người dùng ${user.name} đã bị xóa khỏi hệ thống`,
+        link: '/admin/users',
+      });
+      
     } catch (error) {
       res.json({ success: false, message: error.message });
     }
@@ -155,7 +188,7 @@
       const { id } = req.params;
       const { role } = req.body;
 
-      if (!["user", "admin"].includes(role)) {
+      if (!["user", "admin", "staff"].includes(role)) {
         return res.json({ success: false, message: "Invalid role" });
       }
 
@@ -232,7 +265,8 @@
   export {
     loginUser,
     registerUser,
-    adminLogin,
+    // staffLogin,
+    // adminLogin,
     getAllUsers,
     deleteUser,
     updateUserRole,

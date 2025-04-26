@@ -1,5 +1,8 @@
 import express from 'express';
-import { listProducts, addProduct, removeProduct, singleProduct, editProduct,} from '../controllers/productController.js';
+import { listProducts, 
+  addProduct, 
+  removeProduct, 
+  singleProduct, editProduct, importProduct, lowQuantityProducts, topSellingProducts } from '../controllers/productController.js';
 import upload from '../middleware/multer.js';
 import adminAuth from '../middleware/adminAuth.js';
 
@@ -11,6 +14,14 @@ productRouter.post('/add',adminAuth,upload.fields([{name:'image1',maxCount: 1 },
 productRouter.post('/remove',adminAuth, removeProduct);
 productRouter.post('/single', singleProduct);
 productRouter.get('/list', listProducts);
+// nhap so luong san pham
+productRouter.post('/import', importProduct);
+// router để thanh toán
+// productRouter.post('/checkout', checkout);
+// lay so luong san pham thap nhat
+productRouter.get('/low-quantity', lowQuantityProducts);
+// lay so luong san pham ban chay nhat
+productRouter.get('/top-selling', topSellingProducts);
 productRouter.put(
     '/edit/:productId',
     adminAuth,

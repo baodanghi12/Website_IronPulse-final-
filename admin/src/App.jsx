@@ -11,7 +11,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import HomeScreen from "./pages/HomeScreen";
 import ReportScreen from "./pages/ReportScreen"; // Giữ một lần import duy nhất
 import Actions from "./pages/Actions";
-
+import { jwtDecode } from "jwt-decode";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,6 +26,7 @@ import {
 import { BillsScreen } from "./pages";
 import PromotionScreen from "./pages/PromotionScreen";
 import UserManagement from "./pages/UserManagement";
+import ImportProductScreen from "./pages/ImportProductScreen";
 
 ChartJS.register(
   CategoryScale,
@@ -41,11 +42,22 @@ ChartJS.register(
 export const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const currency = '$'
 
+
+
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem('token')?localStorage.getItem('token'):'');
-
+  // thêm dòng này vào trong App
+  const [role, setRole] = useState("");
   useEffect(()=>{
     localStorage.setItem("token", token);
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setRole(decoded.role); // tùy payload token bạn, thường là user.role hoặc role
+      } catch (err) {
+        console.error("Invalid token", err);
+      }
+    }
   },[token]);
 
   return (
@@ -58,18 +70,20 @@ const App = () => {
         <Navbar setToken={setToken} />
           <hr />
           <div className="flex w-full">
-            <Sidebar />
+            <Sidebar role={role}/>
             <div className="w-[70%] mx-auto ml-[max(5vw,25px)] my-8 text-gray-600 text-base">
             <Routes>
             <Route path="/home" element={<HomeScreen token={token}/>} />
-              <Route path="/add" element={<Add token={token}/>} />
+            {role !== "staff" && ( // Chỉ hiển thị trang Add khi không phải là staff
+                  <Route path="/add" element={<Add token={token} />} />
+                )}
               <Route path="/list" element={<List token={token} />} />
               <Route path="/orders" element={<Orders token={token}/>} />
               <Route path="/revenue" element={<ReportScreen token={token}/>} />
-              <Route path="/index" element={<BillsScreen token={token}/>} />
-              <Route path="/promotions" element={<PromotionScreen token={token}/>} />
+              <Route path="/importProduct" element={<ImportProductScreen token={token}/>} />
+              <Route path="/promotions" element={<PromotionScreen token={token} role={role}/>} />
               <Route path="/actions" element={<Actions token={token}/>} />
-              <Route path="/usermanagement" element={<UserManagement token={token}/>} />
+              <Route path="/usermanagement" element={<UserManagement token={token} role={role} />} />
             </Routes>
           </div>
           </div>

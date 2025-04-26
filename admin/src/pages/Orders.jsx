@@ -3,14 +3,18 @@ import axios from 'axios';
 import { backendUrl, currency } from '../App';
 import { toast } from 'react-toastify';
 import { assets } from '../assets/assets';
-
+import { DatePicker, Select, Button, Space } from 'antd';
+import dayjs from 'dayjs';
+const { RangePicker } = DatePicker;
 const Orders = ({ token }) => {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [activeTab, setActiveTab] = useState('customer');
   const [orderStatus, setOrderStatus] = useState(selectedOrder?.status || '');
   const [paymentStatus, setPaymentStatus] = useState(selectedOrder?.payment ? 'Done' : 'Pending');
-
+  // filters
+  const [filterDateRange, setFilterDateRange] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('All');
   const fetchAllOrders = async () => {
     if (!token) return;
     try {
@@ -20,6 +24,17 @@ const Orders = ({ token }) => {
         { headers: { token } }
       );
       if (response.data.success) {
+        const sortedOrders = response.data.orders.sort((a, b) => {
+          const orderStatusPriority = {
+            'Order Placed': 1,
+            'Packing': 2,
+            'Shipped': 3,
+            'Out for delivery': 4,
+            'Delivered': 5,
+          };
+  
+          return orderStatusPriority[a.status] - orderStatusPriority[b.status];
+        });
         setOrders(response.data.orders);
       } else {
         toast.error(response.data.message);
@@ -54,69 +69,189 @@ const Orders = ({ token }) => {
       setPaymentStatus(selectedOrder.payment ? 'Done' : 'Pending');
     }
   }, [selectedOrder]);
-
+  const handlePrintOrder = (order) => {
+    const currency = '₫'; // hoặc VND.format() nếu bạn muốn dùng định dạng
+    const logoUrl = 'https://yourdomain.com/logo.png'; // đổi thành URL logo thật
+    const storeName = 'IRON PULSE - Fashion Store'; // tên cửa hàng
+  
+    const subTotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shippingFee = order.shipping || 0;
+    const discount = order.discount || 0;
+    const total = subTotal + shippingFee - discount;
+  
+    const content = `
+      <html>
+        <head>
+          <title>Order #${order._id.slice(-6).toUpperCase()}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+            h1, h2, h3 { text-align: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            .summary { margin-top: 20px; }
+            .summary p { margin: 4px 0; text-align: right; }
+            .logo { width: 80px; height: auto; display: block; margin: 0 auto; }
+          </style>
+        </head>
+        <body>
+          <img src="${logoUrl}" alt="Logo" class="logo" />
+          <h1>${storeName}</h1>
+          <h2>Order Details</h2>
+  
+          <p><strong>Order ID:</strong> #${order._id.slice(-6).toUpperCase()}</p>
+          <p><strong>Name:</strong> ${order.address?.fristName} ${order.address?.lastName}</p>
+          <p><strong>Phone:</strong> (+84) ${order.address?.phone}</p>
+          <p><strong>Address:</strong> ${order.address?.street}, ${order.address?.city}, ${order.address?.state}, ${order.address?.country}, ${order.address?.zipcode}</p>
+          <p><strong>Date:</strong> ${new Date(order.date).toLocaleString()}</p>
+          <p><strong>Status:</strong> ${order.status}</p>
+          <p><strong>Payment:</strong> ${order.payment ? 'Done' : 'Pending'}</p>
+          <p><strong>Note:</strong> ${order.note || 'Không có ghi chú.'}</p>
+  
+          <h3>Items:</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.items.map(item => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>${item.quantity}</td>
+                  <td>${currency} ${item.price.toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+  
+          <div class="summary">
+            <p><strong>Subtotal:</strong> ${currency} ${subTotal.toLocaleString()}</p>
+            <p><strong>Discount:</strong> ${currency} ${discount.toLocaleString()}</p>
+            <p><strong>Shipping Fee:</strong> ${currency} ${shippingFee.toLocaleString()}</p>
+            <p><strong>Total:</strong> <strong>${currency} ${total.toLocaleString()}</strong></p>
+          </div>
+        </body>
+      </html>
+    `;
+  
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+  
+  
+  // ✅ Hàm lọc đơn hàng
+  const filteredOrders = orders.filter((order) => {
+    const inStatus = filterStatus === 'All' || order.status === filterStatus;
+  
+    const inDateRange =
+      !filterDateRange ||
+      (dayjs(order.date).isAfter(filterDateRange[0], 'day') || dayjs(order.date).isSame(filterDateRange[0], 'day')) &&
+      (dayjs(order.date).isBefore(filterDateRange[1], 'day') || dayjs(order.date).isSame(filterDateRange[1], 'day'));
+  
+    return inStatus && inDateRange;
+  });
   return (
     <div>
       <h3 className="text-xl font-semibold mb-4">Order Page</h3>
+      
+      {/* ✅ Bộ lọc trạng thái và ngày */}
+      <div className="flex flex-wrap gap-4 mb-4">
+        <div>
+          <label className="mr-2 font-medium">Filter by Status:</label>
+          <Select
+            defaultValue="All"
+            style={{ width: 180 }}
+            onChange={(value) => setFilterStatus(value)}
+            options={[
+              { value: 'All', label: 'All' },
+              { value: 'Order Placed', label: 'Order Placed' },
+              { value: 'Packing', label: 'Packing' },
+              { value: 'Shipped', label: 'Shipped' },
+              { value: 'Out for delivery', label: 'Out for delivery' },
+              { value: 'Delivered', label: 'Delivered' },
+            ]}
+          />
+        </div>
+        <div>
+          <label className="mr-2 font-medium">Filter by Date:</label>
+          <RangePicker
+            onChange={(dates) => setFilterDateRange(dates)}
+            allowClear
+          />
+        </div>
+      </div>
 
-      {orders.length === 0 ? (
+      {/* Danh sách đơn hàng */}
+      {filteredOrders.length === 0 ? (
         <p className='text-gray-500 italic'>No orders found.</p>
       ) : (
-        
-        orders.map((order, index) => (
-          <div
-            key={index}
-            className='cursor-pointer grid grid-cols-1 sm:grid-cols-[0.5fr_2fr_1fr] lg:grid-cols-[0.5fr_2fr_1fr_1fr_1fr] gap-3 items-start border-2 border-gray-200 p-5 md:p-8 my-3 md:my-4 text-xs sm:text-sm text-gray-700 hover:bg-gray-50 transition'
-            onClick={() => setSelectedOrder(order)}
-          >
-            <img className='w-12' src={assets.parcel_icon} alt='Parcel Icon' />
-
-            <div>
-              <div>
-                {order.items?.map((item, idx) => (
-                  <p className='py-0.5' key={idx}>
-                    {item.name} x {item.quantity} <span>{item.size}</span>
-                  </p>
-                ))}
-              </div>
-              <p className='mt-3 mb-2 font-medium'>
-                {order.address?.fristName} {order.address?.lastName}
-              </p>
-              <div>
-                <p>{order.address?.street},</p>
-                <p>
-                  {order.address?.city}, {order.address?.state},{' '}
-                  {order.address?.country}, {order.address?.zipcode}
-                </p>
-              </div>
-              <p>{order.address?.phone}</p>
-            </div>
-
-            <div>
-              <p className='text-sm sm:text-[15px]'>Items: {order.items?.length}</p>
-              <p className='mt-3'>Method: {order.paymentMethod}</p>
-              <p>Payment: {order.payment ? 'Done' : 'Pending'}</p>
-              <p>Date: {new Date(order.date).toLocaleDateString()}</p>
-            </div>
-
-            <p className='text-sm sm:text-[15px]'>
-              {currency} {order.amount}
-            </p>
-
-            <select
-              className='p-2 font-semibold bg-gray-100'
-              onChange={(event) => statusHandler(event, order._id)}
-              value={order.status}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <option value='Order Placed'>Order Placed</option>
-              <option value='Packing'>Packing</option>
-              <option value='Shipped'>Shipped</option>
-              <option value='Out for delivery'>Out for delivery</option>
-              <option value='Delivered'>Delivered</option>
-            </select>
-          </div>
-        ))
+        <table className='min-w-full table-auto'>
+          <thead className='bg-gray-100'>
+            <tr>
+              <th className='px-4 py-2 text-left'>ID</th>
+              <th className='px-4 py-2 text-left'>Name</th>
+              <th className='px-4 py-2 text-left'>Address</th>
+              <th className='px-4 py-2 text-left'>Create At</th>
+              <th className='px-4 py-2 text-left'>Quantity</th>
+              <th className='px-4 py-2 text-left'>Total Price</th>
+              <th className='px-4 py-2 text-left'>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredOrders.map((order) => (
+              <tr
+                key={order._id}
+                className='border-t cursor-pointer hover:bg-gray-50'
+                onClick={() => setSelectedOrder(order)}
+              >
+                <td className='px-4 py-2'>
+                  <span
+                    style={{
+                      border: '1px solid #339AF0',
+                      borderRadius: '4px',
+                      padding: '1px 3px',
+                      color: '#339AF0',
+                      display: 'inline-block',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    #{order._id.slice(-6).toUpperCase()}
+                  </span>
+                </td>
+                <td className='px-4 py-2'>{`${order.address?.fristName} ${order.address?.lastName}`}</td>
+                <td className='px-4 py-2'>
+                  {`${order.address?.street}, ${order.address?.city}, ${order.address?.state}`}
+                </td>
+                <td className='px-4 py-2'>{new Date(order.date).toLocaleString()}</td>
+                <td className='px-4 py-2'>{order.items?.reduce((total, item) => total + item.quantity, 0)}</td>
+                <td className='px-4 py-2'>{currency} {order.amount}</td>
+                <td className='px-4 py-2'>
+                  <span
+                    className={`px-2 py-1 rounded text-white ${
+                      order.status === 'Delivered'
+                        ? 'bg-green-500'
+                        : order.status === 'Shipped'
+                        ? 'bg-blue-500'
+                        : order.status === 'Packing'
+                        ? 'bg-yellow-500'
+                        : order.status === 'Out for delivery'
+                        ? 'bg-orange-500' 
+                        : 'bg-gray-500'
+                    }`}
+                  >
+                    {order.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
 
       {/* Popup Order Detail */}
@@ -150,13 +285,31 @@ const Orders = ({ token }) => {
                   className='w-16 h-16 rounded-full object-cover'
                 />
                 <div>
-                  <p><strong>Order ID:</strong> {selectedOrder.orderId}</p>
+                <p>
+                  <strong>Order ID:</strong>{' '}
+                  <span style={{
+                    border: '1px solid #339AF0',
+                    borderRadius: '4px',
+                    padding: '1px 3px',
+                    color: '#339AF0',
+                    display: 'inline-block',
+                    fontWeight: 'bold'
+                  }}>
+                     #{selectedOrder._id.slice(-6).toUpperCase()}
+                  </span>
+                </p>
                   <p><strong>Name:</strong> {selectedOrder.address?.fristName} {selectedOrder.address?.lastName}</p>
                   <p><strong>Phone:</strong> {selectedOrder.address?.phone}</p>
                   <p><strong>Address:</strong> {selectedOrder.address?.street}, {selectedOrder.address?.city}, {selectedOrder.address?.state}, {selectedOrder.address?.country}, {selectedOrder.address?.zipcode}</p>
+                  <p><strong style={{ marginRight: '5px' }}>Date:</strong>{selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : new Date(selectedOrder.date).toLocaleString()}</p>
+                  
+
+
+
+
                 </div>
               </div>
-
+              
               {/* Order Status & Payment Status */}
               <div className='text-sm text-right space-y-2'>
               <div>
@@ -187,6 +340,8 @@ const Orders = ({ token }) => {
     <option value='Out for delivery'>Out for delivery</option>
     <option value='Delivered'>Delivered</option>
   </select>
+  
+
 </div>
 
 
@@ -245,7 +400,25 @@ const Orders = ({ token }) => {
 
               </div>
             </div>
-
+            {/* Noting by UserUser */}
+<div style={{ marginTop: '1rem' }}>
+  <label><strong>Note:</strong></label>
+  <div
+    style={{
+      marginTop: '0.5rem',
+      width: '100%',
+      minHeight: '100px',
+      padding: '0.75rem',
+      border: '1px solid #ccc',
+      borderRadius: '6px',
+      backgroundColor: '#f5f5f5',
+      whiteSpace: 'pre-wrap',
+      fontSize: '1rem',
+    }}
+  >
+    {selectedOrder.note || 'none'}
+  </div>
+</div>
             {/* Details */}
             <div className='text-sm text-gray-800 space-y-2'>
               
@@ -263,6 +436,14 @@ const Orders = ({ token }) => {
       Paid Online
     </span>
   )}
+  {selectedOrder.note && (
+  <div>
+    <label className='font-medium mr-2'>Customer Note:</label>
+    <span className='italic text-gray-700'>
+      {selectedOrder.note}
+    </span>
+  </div>
+)}
 </p>
 
 
@@ -274,37 +455,52 @@ const Orders = ({ token }) => {
     <tr>
       <th className='text-left px-2 py-1'>#</th> {/* Cột STT */}
       <th className='text-left px-2 py-1'>Item Name</th>
+      <th className='text-left px-2 py-1'>Category</th>
       <th className='text-left px-2 py-1'>Quantity</th>
       <th className='text-left px-2 py-1'>Price</th>
     </tr>
   </thead>
   <tbody>
-    {selectedOrder.items.map((item, idx) => (
-      <tr key={idx} className='border-t'>
-        <td className='px-2 py-1'>{idx + 1}</td> {/* Hiển thị STT */}
-        <td className='px-2 py-1'>{item.name}</td>
-        <td className='px-2 py-1'>{item.quantity}</td>
-        <td className='px-2 py-1'>{currency} {item.price}</td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+  {selectedOrder.items.map((item, idx) => (
+    <tr key={idx} className='border-t'>
+      <td className='px-2 py-1'>{idx + 1}</td>
+      <td className='px-2 py-1'>{item.name}</td>
+      <td className='px-2 py-1'>{item.category || 'N/A'}</td>
+      <td className='px-2 py-1'>{item.quantity}</td>
+      <td className='px-2 py-1'>{currency} {item.price}</td>
+    </tr>
+  ))}
+</tbody>
 
+</table>
+              
               <hr className='my-3' />
 
               {/* Summary */}
               <div className='flex flex-col text-right space-y-1'>
+              
                 <p><strong>Subtotal:</strong> {currency} {selectedOrder.subtotal}</p>
                 <p><strong>Discount:</strong> {currency} {selectedOrder.discount}</p>
                 <p><strong>Shipping Fee:</strong> {currency} {selectedOrder.shippingFee ?? 10}</p>
                 <p><strong>Total Amount:</strong> {currency} {selectedOrder.amount}</p>
+                
+
+
               </div>
+              <div className='text-left'>
+  <Button type='primary' onClick={() => handlePrintOrder(selectedOrder)}>
+    🖨 In Order Detail
+  </Button>
+</div>
             </div>
+            
           </div>
         </div>
       )}
+      
     </div>
   );
+  
 };
 
 export default Orders;

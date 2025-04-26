@@ -1,17 +1,21 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Select } from "antd";
-import { Bar } from "react-chartjs-2";
-import { Line } from "react-chartjs-2";
+import { Bar, Line } from "react-chartjs-2";
+import axios from "axios";
 
 const SalesAndPurchaseStatistic = () => {
-  
-  const [timeTypeSelected, setTimeTypeSelected] = React.useState("weekly");
-  
+  const [timeTypeSelected, setTimeTypeSelected] = useState("weekly");
+  const [chartData, setChartData] = useState({
+    labels: [],
+    sales: [],
+    orders: [],
+  });
+
   const options = {
     responsive: true,
     plugins: {
       legend: {
-        display: false,
+        display: true,
         position: "top",
       },
       title: {
@@ -21,72 +25,48 @@ const SalesAndPurchaseStatistic = () => {
   };
 
   const items = [
-    {
-      key: "weekly",
-      label: "Weekly",
-    },
-    {
-      key: "monthly",
-      label: "Monthly",
-    },
-    {
-      key: "yearly",
-      label: "Yearly",
-    },
+    { key: "weekly", label: "Weekly" },
+    { key: "monthly", label: "Monthly" },
+    { key: "yearly", label: "Yearly" },
   ];
 
   const getChartData = () => {
-    if (timeTypeSelected === "weekly") {
-      return {
-        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-        datasets: [
-          {
-            label: "Sales",
-            data: [12, 19, 3, 5, 2, 3, 7],
-            backgroundColor: "rgba(53, 162, 235, 0.5)",
-          },
-          {
-            label: "Orders",
-            data: [2, 3, 20, 5, 1, 4, 6],
-            backgroundColor: "rgba(255, 99, 132, 0.5)",
-          },
-        ],
-      };
-    } else if (timeTypeSelected === "monthly") {
-      return {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-        datasets: [
-          {
-            label: "Sales",
-            data: [65, 59, 80, 81, 56, 55],
-            backgroundColor: "rgba(53, 162, 235, 0.5)",
-          },
-          {
-            label: "Orders",
-            data: [28, 48, 40, 19, 86, 27],
-            backgroundColor: "rgba(255, 99, 132, 0.5)",
-          },
-        ],
-      };
-    } else {
-      // yearly
-      return {
-        labels: ["2020", "2021", "2022", "2023", "2024"],
-        datasets: [
-          {
-            label: "Sales",
-            data: [200, 300, 400, 350, 500],
-            backgroundColor: "rgba(53, 162, 235, 0.5)",
-          },
-          {
-            label: "Orders",
-            data: [150, 250, 320, 290, 450],
-            backgroundColor: "rgba(255, 99, 132, 0.5)",
-          },
-        ],
-      };
-    }
+    return {
+      labels: chartData.labels,
+      datasets: [
+        {
+          label: "Sales",
+          data: chartData.sales,
+          backgroundColor: "rgba(53, 162, 235, 0.5)",
+          borderColor: "rgba(53, 162, 235, 1)",
+        },
+        {
+          label: "Orders",
+          data: chartData.orders,
+          backgroundColor: "rgba(255, 99, 132, 0.5)",
+          borderColor: "rgba(255, 99, 132, 1)",
+        },
+      ],
+    };
   };
+  
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const res = await axios.get(`/api/statistics/orders?type=${timeTypeSelected}`);
+        setChartData({
+          labels: res.data.labels || [],
+          sales: res.data.sales || [],
+          orders: res.data.orders || [],
+        });
+      } catch (error) {
+        console.error("Failed to fetch chart data:", error);
+      }
+    };
+
+    fetchChartData();
+  }, [timeTypeSelected]);
 
   return (
     <div
@@ -94,7 +74,7 @@ const SalesAndPurchaseStatistic = () => {
         display: "flex",
         gap: "1rem",
         marginTop: "1rem",
-        flexWrap: "wrap", // responsive khi màn hình nhỏ
+        flexWrap: "wrap",
       }}
     >
       {/* Bar Chart */}

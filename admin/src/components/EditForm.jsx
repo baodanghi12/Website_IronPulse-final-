@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { backendUrl } from '../App';
 import { assets } from '../assets/assets';
+import { VND } from '../utils/handleCurrency';
 
 const EditForm = ({ token, productId, onUpdateSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -19,13 +20,13 @@ const EditForm = ({ token, productId, onUpdateSuccess }) => {
   const [sizes, setSizes] = useState([]);
   const [colors, setColors] = useState([]);
   const [newColor, setNewColor] = useState('#000000');
-
+  const [importProducts, setImportProducts] = useState([]);
   // Gọi API để lấy thông tin sản phẩm
   useEffect(() => {
     setLoading(true);
     fetchProduct();
   }, [productId, token]);
-
+ 
   const fetchProduct = async () => {
     try {
       const res = await axios.post(
@@ -67,10 +68,6 @@ const EditForm = ({ token, productId, onUpdateSuccess }) => {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
   
-    if (sizes.length === 0 || colors.length === 0) {
-      toast.error('Please select at least one size and one color.');
-      return;
-    }
   
     const formData = new FormData();
     formData.append('name', name);
@@ -206,26 +203,28 @@ const EditForm = ({ token, productId, onUpdateSuccess }) => {
           />
         </div>
       </div>
-
-      {/* Sizes */}
-      <div>
-        <p className="mb-2">Sizes</p>
-        <div className="flex gap-3 flex-wrap">
-          {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
-            <p
-              key={size}
-              onClick={() =>
-                setSizes((prev) =>
-                  prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
-                )
-              }
-              className={`px-3 py-1 cursor-pointer ${sizes.includes(size) ? 'bg-pink-200' : 'bg-slate-300'}`}
-            >
-              {size}
-            </p>
-          ))}
+      {/* Danh sách sizes và cost tương ứng */}
+<div className="mt-4">
+  <h4 className="font-semibold">Size / Quantity</h4>
+  <div className="flex flex-col gap-1 text-sm mt-2">
+    {sizes && sizes.length > 0 ? (
+      sizes.map((s, idx) => (
+        <div key={idx} className="flex gap-3">
+          <span><b>Size:</b> {s.size}</span>
+          <span><b>Quantity:</b> {s.quantity}</span>
         </div>
-      </div>
+      ))
+    ) : (
+      <span className="text-gray-500">No size info</span>
+    )}
+  </div>
+
+  {/* Hiển thị cost một lần */}
+  <div className="mt-2">
+    <span><b>Cost:</b> {VND.format(product?.cost ?? 0)}</span>
+  </div>
+</div>
+
 
       {/* Colors */}
       <div className="w-full">

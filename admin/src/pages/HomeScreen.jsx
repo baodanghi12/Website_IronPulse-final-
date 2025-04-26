@@ -15,7 +15,7 @@ const HomeScreen = () => {
   revenue: 0,
   cost: 0,
   profit: 0,
-  deliveringOrders: 0,
+  quantityInHand: 0, 
   toBeReceivedOrders: 0,
   });
 
@@ -25,15 +25,14 @@ const HomeScreen = () => {
     setIsLoading(true);
     try {
       const res = await axios.get('/api/statistics/orders');
-
-      console.log('API response:', res.data);
-      const { sales, revenue, cost, profit, deliveringOrders, toBeReceivedOrders} = res.data;
+  
+      const { sales, revenue, cost, profit, quantityInHand, toBeReceivedOrders } = res.data;
       setStatisticValues({
         salesCount: sales,
         revenue,
         cost,
         profit,
-        deliveringOrders,
+        quantityInHand,  // 🆕 map đúng
         toBeReceivedOrders,
       });
     } catch (error) {
@@ -50,30 +49,15 @@ const HomeScreen = () => {
 
 
   const totalcost = (value) => {
-    const items = value.map((item) => {
-      return item.products.reduce((a, b) => a + (b.price * (b.cost ?? 0)), 0);
+    const items = value.map((order) => {
+      return order.products.reduce((total, product) => {
+        return total + (product.cost ?? 0) * (product.quantity ?? 0);
+      }, 0);
     });
-
+  
     return items.reduce((a, b) => a + b, 0);
   };
-
-  // const handleUpdateCost = async (value) => {
-  //   try {
-  //     const items = value.map((item) => {
-  //       item.products.forEach((product) => {
-  //         if (!product.cost) {
-  //           product.cost = product.price * 0.7;
-  //           console.log(product._id);
-  //         }
-  //         console.log('product cost', product.cost);
-  //       });
-  //     });
-  //     await Promise.all(items);
-  //   } catch (error) {
-  //     console.error('Error updating cost:', error);
-  //   }
-  // };
-
+  
   return isLoading ? (
     <div className='container text-center py-5'>
       <Spin />
@@ -149,86 +133,75 @@ const HomeScreen = () => {
 {/* Bọc cả Extra Stats */}
 <div style={{ flex: '1 1 30%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
   {/* Extra Stats */}
-  <Card className='mb-0' body={{ padding: '1rem' }}>
-    <Typography.Title level={4}>Extra Stats</Typography.Title>
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        gap: '1rem',
-        padding: '0.2rem 0',
-      }}
-    >
-      {/* Block 1 */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* ICON */}
-        <div
-          style={{
-            width: 35,
-            height: 35,
-            backgroundColor: '#339AF01a',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderRadius: 8,
-            marginBottom: '0.2rem',
-          }}
-        >
-          <img
-            style={{
-              width: '60%',
-              height: 'auto',
-              borderRadius: 2,
-            }}
-            src='./src/assets/icons8-sales-50.png'
-            alt='icon'
-          />
-        </div>
-
-        {/* VALUE & TITLE */}
-        <Typography.Text style={{ fontSize: '1.2rem', fontWeight: '600' }}>
-          {statisticValue.deliveringOrders}
-        </Typography.Text>
-        <Typography.Text type='secondary' style={{ fontSize: '0.8rem' }}>
-          Quantity in Hand
-        </Typography.Text>
+  <Card className='mb-0' bodyStyle={{ padding: '1.2rem', minHeight: '160px' }}>
+  <Typography.Title level={4}>Extra Stats</Typography.Title>
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      gap: '1rem',
+      padding: '1rem 0',
+    }}
+  >
+    {/* Block 1 - Quantity In Hand */}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          backgroundColor: '#339AF01a',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          borderRadius: 8,
+          marginBottom: '0.5rem',
+        }}
+      >
+        <img
+          src='./src/assets/icons8-warehouse-50.png' // gợi ý đổi icon nếu bạn muốn dễ phân biệt hơn
+          alt='icon'
+          style={{ width: '60%', height: 'auto' }}
+        />
       </div>
-
-      {/* Block 2 */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div
-          style={{
-            width: 35,
-            height: 35,
-            backgroundColor: '#339AF01a',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderRadius: 8,
-            marginBottom: '0.2rem',
-          }}
-        >
-          <img
-            style={{
-              width: '60%',
-              height: 'auto',
-              borderRadius: 2,
-            }}
-            src='./src/assets/icons8-sales-50.png'
-            alt='icon'
-          />
-        </div>
-
-        <Typography.Text style={{ fontSize: '1.2rem', fontWeight: '600' }}>
-          {statisticValue.toBeReceivedOrders}
-        </Typography.Text>
-        <Typography.Text type='secondary' style={{ fontSize: '0.8rem' }}>
-          To be received
-        </Typography.Text>
-      </div>
+      <Typography.Text style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+        {statisticValue.quantityInHand}
+      </Typography.Text>
+      <Typography.Text type='secondary' style={{ fontSize: '0.85rem' }}>
+        Quantity in Hand
+      </Typography.Text>
     </div>
-  </Card>
+
+    {/* Block 2 - To be received */}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          backgroundColor: '#339AF01a',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          borderRadius: 8,
+          marginBottom: '0.5rem',
+        }}
+      >
+        <img
+          src='./src/assets/icons8-delivery-50.png'
+          alt='icon'
+          style={{ width: '60%', height: 'auto' }}
+        />
+      </div>
+      <Typography.Text style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+        {statisticValue.toBeReceivedOrders}
+      </Typography.Text>
+      <Typography.Text type='secondary' style={{ fontSize: '0.85rem' }}>
+        To be received
+      </Typography.Text>
+    </div>
+  </div>
+</Card>
+
 </div>
 
 
