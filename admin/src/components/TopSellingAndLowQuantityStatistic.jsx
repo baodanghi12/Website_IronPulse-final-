@@ -91,7 +91,7 @@ const TopSellingAndLowQuantityStatistic = () => {
       </Card>
 
       {/* Card 2 */}
-      <Card title="Low Quantity Stock" extra={<Link to={`/inventory`}>See all</Link>} style={{ flex: 1 }}>
+      <Card title="Low Quantity Stock" extra={<Link to={`/list?sort=lowStock`}>See all</Link>} style={{ flex: 1 }}>
         {loading ? (
           <div className="text-center py-4">
             <Spin />

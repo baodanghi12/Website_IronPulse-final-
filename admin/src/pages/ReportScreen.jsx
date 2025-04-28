@@ -17,6 +17,7 @@ const ReportScreen = () => {
   });
   const [bestCategories, setBestCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [bestProducts, setBestProducts] = useState([]);
 
   const getTotalProfit = async () => {
     setLoading(true);
@@ -33,7 +34,7 @@ const ReportScreen = () => {
         profitYOY: data.profitYOY || 0,
       });
       setBestCategories(data.bestSellingCategories || []);
-      console.log('Best Categories:', data.bestSellingCategories);
+      setBestProducts(data.bestSellingProducts || []);
     } catch (error) {
       console.error('Error loading profit data:', error);
     } finally {
@@ -136,48 +137,114 @@ const ReportScreen = () => {
           style={{ flex: 1, minWidth: '500px' }}
           
         >
-            <Table
-    dataSource={bestCategories}
-    rowKey="title"
-    pagination={{ pageSize: 5, hideOnSinglePage: true }}
-    columns={[
-      {
-        key: 'title',
-        title: 'Product',
-        dataIndex: 'title',
-        render: (categories) => <strong>{categories}</strong>,
-      },
-      {
-        key: 'turnOver',
-        title: 'Turn Over',
-        dataIndex: 'turnOver',
-        render: (turnOver) => VND.format(turnOver),
-      },
-      {
-        key: 'increaseBy',
-        title: 'Increase By',
-        dataIndex: 'increaseBy',
-        render: (increaseBy) => `${increaseBy}%`,
-      },
-    ]}
-  />
+          <Table
+  dataSource={bestCategories}
+  rowKey="category"
+  pagination={{ pageSize: 5, hideOnSinglePage: true }}
+  columns={[
+    {
+      key: 'category',
+      title: 'Category',
+      dataIndex: 'category',
+      render: (category) => <strong>{category}</strong>,
+    },
+    {
+      key: 'turnOver',
+      title: 'Turn Over',
+      dataIndex: 'turnOver',
+      render: (turnOver) => VND.format(turnOver),
+    },
+    {
+      key: 'count',
+      title: 'Quantity Sold', // 🆕 thêm cột
+      dataIndex: 'count',
+      render: (count) => count.toLocaleString(),
+    },
+    {
+      key: 'increaseBy',
+      title: 'Increase By',
+      dataIndex: 'increaseBy',
+      render: (increaseBy) => `${increaseBy}%`,
+    },
+  ]}
+/>
+
+
+
         </Card>
       </div>
 
       <ProfitRevenueChart />
 
       <Table
-        dataSource={[]}
-        columns={[]}
-        pagination={false}
-        style={{ marginTop: '2rem' }}
-        title={() => (
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
-            <span>Best selling product</span>
-            <a href="#">See All</a>
-          </div>
-        )}
-      />
+  dataSource={bestProducts}
+  rowKey="productId"
+  pagination={{ pageSize: 5, hideOnSinglePage: true }}
+  style={{ marginTop: '2rem' }}
+  columns={[
+    {
+      title: 'Product Name',
+      dataIndex: 'productName',
+      key: 'productName',
+    },
+    {
+      title: 'Product ID',
+      dataIndex: 'productId',
+      key: 'productId',
+      render: (productId) => {
+        if (!productId) {
+          return <span style={{ color: 'red', fontWeight: 600 }}>Unknown</span>;
+        }
+        const last6 = productId.slice(-6); // lấy 6 ký tự cuối
+        return (
+          <span
+            style={{
+              backgroundColor: '#e0f7fa',
+              padding: '2px 8px',
+              borderRadius: '5px',
+              fontWeight: '600',
+              color: '#00796b',
+            }}
+          >
+            #{last6}
+          </span>
+        );
+      }
+    },
+    
+    
+    {
+      title: 'Category',
+      dataIndex: 'category',
+      key: 'category',
+    },
+    {
+      title: 'Remaining Quantity',
+      dataIndex: 'remainingQuantity',
+      key: 'remainingQuantity',
+      render: (quantity) => quantity?.toLocaleString() || 0,
+    },
+    {
+      title: 'Turn Over',
+      dataIndex: 'turnOver',
+      key: 'turnOver',
+      render: (value) => VND.format(value),
+    },
+    {
+      title: 'Increase By',
+      dataIndex: 'increaseBy',
+      key: 'increaseBy',
+      render: (value) => `${value}%`,
+    },
+  ]}
+  title={() => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+      <span>Best selling product</span>
+      <a href="#">See All</a>
+    </div>
+  )}
+/>
+
     </div>
   );
 };

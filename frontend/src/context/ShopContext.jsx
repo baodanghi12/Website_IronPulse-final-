@@ -13,49 +13,45 @@ const ShopContextProvider = (props) => {
     const currency = '$';
     const delivery_fee = 10;
     const backendUrl = import.meta.env.VITE_BACKEND_URL
+    const [isLoggedin, setIsLoggedin] = useState(false);
+    const [userData, setUserData] = useState(false)
     const [search,setSearch] = useState('');
     const [showSearch,setShowSearch] = useState(false);
     const [cartItems,setCartItems] = useState({});
     const [products,setProducts] = useState([]);
     const [token,setToken] = useState('')
     const navigate = useNavigate()
+    const [comments, setComments] = useState([
+        { productId: 'abc123', user: 'Đạt', content: 'Sản phẩm rất tốt!', date: '20/04/2025' },
+        { productId: 'abc123', user: 'Bảo', content: 'Hài lòng lắm.', date: '21/04/2025' },
+      ]);
 
 
-    const addToCart = async (itemId,size) => {
-
+      const addToCart = async (itemId, size, color, quantity = 1) => {
         if (!size) {
-            toast.error('Select Product Size');
-            return;
+          toast.error('Select Product Size');
+          return;
         }
-
+      
         let cartData = structuredClone(cartItems);
-
-        if (cartData[itemId]) {
-            if (cartData[itemId][size]) {
-                cartData[itemId][size] += 1;
-            }
-            else{
-                cartData[itemId][size] = 1;
-            }
-        }
-        else{
-            cartData[itemId] = {};
-            cartData[itemId][size] = 1;
-        }
+      
+        if (!cartData[itemId]) cartData[itemId] = {};
+        const key = size + (color ? `-${color}` : '');
+      
+        cartData[itemId][key] = (cartData[itemId][key] || 0) + quantity;
         setCartItems(cartData);
-
+      
         if (token) {
-            try {
-                
-                await axios.post(backendUrl + '/api/cart/add', {itemId,size}, {headers:{token}})
-
-            } catch (error) {
-                console.log(error);
-                toast.error(error.message)
-                
-            }
+          try {
+            await axios.post(backendUrl + '/api/cart/add', { itemId, size, color, quantity }, {
+                withCredentials: true, // ✅ Thêm dòng này
+              });
+          } catch (error) {
+            console.log(error);
+            toast.error(error.message);
+          }
         }
-    }
+      }
 
     const getCartCount = () => {
         let totalCount = 0;
@@ -85,7 +81,10 @@ const ShopContextProvider = (props) => {
         if (token) {
             try {
                 
-                await axios.post(backendUrl + '/api/cart/update', {itemId,size,quantity} , {headers:{token}})
+                await axios.post(backendUrl + '/api/cart/update', { itemId, size, quantity }, {
+                    withCredentials: true, // ✅ Thêm dòng này
+                  });
+                  
 
             } catch (error) {
                 console.log(error);
@@ -98,7 +97,7 @@ const ShopContextProvider = (props) => {
         let totalAmount = 0;
         for(const items in cartItems){
             let itemInfo = products.find((product)=> product._id === items);
-
+            if (!itemInfo) continue;
             for(const item in cartItems[items]){
                 try {
                     if (cartItems[items][item] > 0) {
@@ -129,10 +128,11 @@ const ShopContextProvider = (props) => {
         }
     }
 
-    const getUserCart = async (token) => {
+    const getUserCart = async () => {
         try {
-            
-            const response = await axios.post(backendUrl + '/api/cart/get', {},{headers:{token}})
+            const response = await axios.post(backendUrl + '/api/cart/get', {}, {
+                withCredentials: true, // ✅ THÊM
+            });
             if (response.data.success) {
                 setCartItems(response.data.cartData)
             }
@@ -142,6 +142,45 @@ const ShopContextProvider = (props) => {
         }
     }
 
+    const addComment = (productId, user, content) => {
+        const newComment = {
+          productId,
+          user,
+          content,
+          date: new Date().toLocaleString()
+        };
+        setComments([...comments, newComment]);
+      };
+
+      const getUserData = async () =>{
+        try {
+            const {data} = await axios.get(backendUrl + '/api/auth/data', {
+              withCredentials: true, // 🔥 thêm luôn cho chắc ăn
+            })
+            data.success ? setUserData(data.userData) : toast.error(data.message)
+        } catch (error) {
+            toast.error(error.message)
+        }
+    }
+    
+
+    /*const getAuthState = async()=> {
+        try {
+            const {data} = await axios.get(backendUrl + 'api/user/is-auth')
+            if(data.success){
+                setIsLoggedin(true)
+                getUserData()
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
+    }*/
+
+    /*useEffect(()=>{
+        getAuthState();
+    },[])*/
+
+
     useEffect(()=>{
         getProdcutsData()
     },[])
@@ -149,8 +188,9 @@ const ShopContextProvider = (props) => {
     useEffect(()=> {
         if (!token && localStorage.getItem('token')) {
             setToken(localStorage.getItem('token'))
-            getUserCart(localStorage.getItem('token'))
+            
         }
+        getUserCart()
     },[])
 
     const value = {
@@ -159,7 +199,11 @@ const ShopContextProvider = (props) => {
         cartItems,addToCart, setCartItems,
         getCartCount,updateQuantity,
         getCartAmount, navigate, backendUrl,
-        setToken,token
+        setToken,token,
+        comments, addComment,
+        isLoggedin, setIsLoggedin,
+        userData, setUserData ,
+        getUserData 
     }   
 
     return (

@@ -26,11 +26,11 @@ const HomeScreen = () => {
     try {
       const res = await axios.get('/api/statistics/orders');
   
-      const { sales, revenue, cost, profit, quantityInHand, toBeReceivedOrders } = res.data;
+      const { sales, revenue, totalCost, profit, quantityInHand, toBeReceivedOrders } = res.data;
       setStatisticValues({
         salesCount: sales,
         revenue,
-        cost,
+        cost: totalCost,
         profit,
         quantityInHand,  // 🆕 map đúng
         toBeReceivedOrders,
@@ -159,7 +159,7 @@ const HomeScreen = () => {
         }}
       >
         <img
-          src='./src/assets/icons8-warehouse-50.png' // gợi ý đổi icon nếu bạn muốn dễ phân biệt hơn
+          src='./src/assets/icons8-stock-48.png' // gợi ý đổi icon nếu bạn muốn dễ phân biệt hơn
           alt='icon'
           style={{ width: '60%', height: 'auto' }}
         />
@@ -187,7 +187,7 @@ const HomeScreen = () => {
         }}
       >
         <img
-          src='./src/assets/icons8-delivery-50.png'
+          src='./src/assets/icons8-delivered-100.png'
           alt='icon'
           style={{ width: '60%', height: 'auto' }}
         />

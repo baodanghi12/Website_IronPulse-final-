@@ -23,7 +23,12 @@ const userSchema = new mongoose.Schema(
     },
     dateOfBirth: {
       type: Date,
-    }
+    },
+    verifyOtp: { type: String, default: '' },
+    verifyOtpExprieAt: { type: Number, default: 0 },
+    isAccountVerified: { type: Boolean, default: false },
+    resetOtp: { type: String, default: '' },
+    resetOtpExprieAt: { type: Number, default: 0 },
   },
   {
     minimize: false,

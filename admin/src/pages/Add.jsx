@@ -176,6 +176,47 @@ const Add = ({ token }) => {
           ))}
         </Select>
       </div>
+          {/* Chọn màu */}
+{/* Chọn màu */}
+<div className='w-full mt-4'>
+  <p className='mb-2'>Chọn màu</p>
+  <div className='flex items-center gap-4'>
+    <input
+      type="color"
+      value={newColor}
+      onChange={(e) => setNewColor(e.target.value)}
+      className='w-10 h-10 p-0 border rounded-md'
+    />
+    <button
+      type="button"
+      onClick={() => setColors([newColor])} // 👈 chỉ cho 1 màu duy nhất
+      className='px-4 py-2 bg-black text-white rounded-md'
+    >
+      Chọn màu
+    </button>
+  </div>
+
+  {/* Hiển thị màu đã chọn */}
+  {colors.length > 0 && (
+    <div className='flex items-center gap-4 mt-4'>
+      {colors.map((color, index) => (
+        <div key={index} className="relative">
+          <div
+            className='w-10 h-10 rounded-full border shadow-md'
+            style={{ backgroundColor: color }}
+          />
+          <button
+            type="button"
+            onClick={() => setColors([])} // 👈 bấm là xóa màu luôn
+            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
       {/* Best seller */}
       <div className='flex gap-2 mt-2'>

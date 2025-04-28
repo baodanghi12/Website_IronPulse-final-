@@ -2,8 +2,8 @@ import express from 'express';
 import {
   loginUser,
   registerUser,
-  // staffLogin,
-  // adminLogin,
+  staffLogin,
+  adminLogin,
   getAllUsers,
   deleteUser,
   updateUserRole,
@@ -12,13 +12,28 @@ import {
   updateUser,
   createUser,
   getUserById,
+  googleLogin,
+  sendResetOtp,
+  sendVerifyOtp,
+  verifyEmail,
+  verifyResetOtp,
+  isAuthenticated,
+  resetPassword
 } from '../controllers/userController.js';
+import authUser from '../middleware/auth.js';
 
 const userRouter = express.Router();
 
 // USER
 userRouter.post('/register', registerUser);
 userRouter.post('/login', loginUser);
+userRouter.post('/google-login', googleLogin);
+userRouter.post('/send-verify-otp', authUser, sendVerifyOtp);
+userRouter.post('/verify-account', authUser, verifyEmail);
+userRouter.get('/is-auth', authUser, isAuthenticated);
+userRouter.post('/send-reset-otp', sendResetOtp);
+userRouter.post('/verify-reset-otp', verifyResetOtp);
+userRouter.post('/reset-password', resetPassword);
 
 // ADMIN - USER MANAGEMENT
 userRouter.get('/', getAllUsers);              // GET all users

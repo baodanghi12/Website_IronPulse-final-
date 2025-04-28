@@ -16,25 +16,26 @@ const Orders = () => {
         return null
       }
 
-      const response = await axios.post(backendUrl + '/api/order/userorders', {}, {headers:{token}})
-      if (response.data.success) {
+      const response = await axios.post(backendUrl + '/api/order/userorders', {}, {headers: {token  } })
+      if (response.data && response.data.orders) {
         let allOrdersItems = []
-        response.data.orders.map((order)=>{
-          order.items.map((item)=>{
-            item['status'] = order.status
-            item['payment'] = order.payment
-            item['paymentMethod'] = order.paymentMethod
-            item['date'] = order.date
-            allOrdersItems.push(item)
-          })
+        response.data.orders.map((order) => {
+          if (order.items) {
+            order.items.map((item) => {
+              item['status'] = order.status
+              item['payment'] = order.payment
+              item['paymentMethod'] = order.paymentMethod
+              item['date'] = order.date
+              allOrdersItems.push(item)
+            })
+          }
         })
         setorderData(allOrdersItems.reverse())
-        
       }
       
 
     } catch (error) {
-
+        toast.error(error.message)
     }
   }
 

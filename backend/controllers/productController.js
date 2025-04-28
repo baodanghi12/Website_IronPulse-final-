@@ -1,9 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import productModel from "../models/productModel.js"
-import { createNotification } from '../utils/createNotification.js';
 import Import from '../models/importModel.js';
 import Order from '../models/orderModel.js'
-import mongoose from "mongoose"; 
 //function for add new qunatity product
 const importProduct = async (req, res) => {
     try {
@@ -21,11 +19,7 @@ const importProduct = async (req, res) => {
 
         res.json({ success: true, message: "Product quantity updated successfully", product });
 
-        // Tạo thông báo khi nhập số lượng
-        await createNotification({
-            title: `📦 Đã nhập thêm số lượng cho sản phẩm: ${product.name}`,
-            link: '/admin/products',
-        });
+       
 
     } catch (error) {
         console.log(error);
@@ -89,7 +83,6 @@ const listProducts =async (req, res) => {
     try {
         
         const products = await productModel.find({})
-        console.log("Products list:", products);
         res.json({success: true, products})
 
     } catch (error) {
@@ -358,7 +351,6 @@ const lowQuantityProducts = async (req, res) => {
       ]);
       
   
-      console.log("Top Selling Products:", topSelling); // Kiểm tra kết quả trong console
   
       if (topSelling.length === 0) {
         return res.status(404).json({ message: "No top selling products found." });

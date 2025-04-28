@@ -2,6 +2,7 @@ import orderModel from "../models/orderModel.js"
 import userModel from "../models/userModel.js"
 import Stripe from "stripe"
 import Order from '../models/orderModel.js';
+import BillModel from '../models/BillModel.js'; 
 // global variables
 const currency = "inr" // currency for stripe payment
 const deliveryCharges = 10 // delivery charges for stripe payment
@@ -154,7 +155,7 @@ const userOrders = async (req,res) => {
     }
 }
 
-// update Orders status from Admin Panel
+
 const updateStatus = async (req, res) => {
     try {
       const { orderId, status, payment } = req.body;
@@ -163,20 +164,56 @@ const updateStatus = async (req, res) => {
       if (status) updateFields.status = status;
       if (typeof payment !== 'undefined') updateFields.payment = payment;
   
-      const result = await orderModel.findByIdAndUpdate(orderId, updateFields, { new: true });
+      const updatedOrder = await orderModel.findByIdAndUpdate(orderId, updateFields, { new: true });
   
-      if (!result) {
+      if (!updatedOrder) {
         return res.status(404).json({ success: false, message: "Order không tồn tại" });
       }
   
-      res.json({ success: true, message: "Cập nhật trạng thái và thanh toán thành công", order: result });
+      // ✅ Nếu đơn đã giao thành công + thanh toán xong thì lưu vào Bill
+      if (updatedOrder.status === 'Delivered' && updatedOrder.payment === true) {
+        const existingBill = await BillModel.findOne({ customer_id: updatedOrder.userId, total: updatedOrder.amount });
+      
+        if (!existingBill) {
+          const bill = new BillModel({
+            products: updatedOrder.items.map(item => ({
+              _id: item._id ? item._id.toString() : '',
+              createdBy: updatedOrder.userId,
+              count: item.quantity,
+              cost: 0,
+              subProductId: '',
+              image: '',
+              color: item.colors?.[0] || '',
+              price: item.price,
+              qty: item.quantity,
+              productId: item.productId || '',
+              title: item.name,
+              __v: 0,
+            })),
+            total: updatedOrder.amount,
+            status: updatedOrder.status,
+            customer_id: updatedOrder.userId,
+            shippingAddress: {
+              address: `${updatedOrder.address?.street || ''}, ${updatedOrder.address?.city || ''}, ${updatedOrder.address?.state || ''}, ${updatedOrder.address?.country || ''}`,
+              _id: updatedOrder.address?._id ? updatedOrder.address._id.toString() : '',
+            },
+            paymentStatus: 1,
+            paymentMethod: updatedOrder.paymentMethod,
+          });
+      
+          await bill.save();
+          console.log(`✅ Bill đã được lưu từ đơn hàng ${updatedOrder._id}`);
+        }
+      }
+      
+  
+      res.json({ success: true, message: "Cập nhật trạng thái và thanh toán thành công", order: updatedOrder });
+  
     } catch (error) {
       console.log(error);
       res.status(500).json({ success: false, message: error.message });
     }
   };
-  
-  
   
 
 const getUserOrders = async (req, res) => {

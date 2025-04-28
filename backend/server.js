@@ -20,6 +20,8 @@ import importRoutes from './router/importRoutes.js'
 // import { createdAt } from '../admin/src/models/LogModel.js';
 import promotionRouter from './router/promotionRouter.js'
 import uploadRouter from './router/upload.js';
+import cookieParser from 'cookie-parser';
+import authRouter from './router/authRoute.js';
 // App Config
 const app = express();
 const port = process.env.PORT || 4000
@@ -29,8 +31,12 @@ connectCloudinary()
 
 // middlewares
 app.use(express.json())
+app.use(cookieParser())
 app.use(express.urlencoded({ extended: true }));
-app.use(cors())
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    credentials: true,
+  }));
 
 // app.use(logMiddleware);
 
@@ -49,6 +55,7 @@ app.use('/api/upload', uploadRouter)
 app.use('/uploads', express.static('public/uploads'));
 app.use('/api/promotions', promotionRouter)
 app.use('/api/notifications', notificationRoute);
+app.use('/api/auth', authRouter)
 
 app.get('/',(req,res)=>{
     res.send("API Working")

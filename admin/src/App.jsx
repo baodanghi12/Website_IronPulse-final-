@@ -10,7 +10,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import HomeScreen from "./pages/HomeScreen";
 import ReportScreen from "./pages/ReportScreen"; // Giữ một lần import duy nhất
-import Actions from "./pages/Actions";
+import Bills from "./pages/Bills";
 import { jwtDecode } from "jwt-decode";
 import {
   Chart as ChartJS,
@@ -23,7 +23,7 @@ import {
   PointElement,
   LineElement,
 } from 'chart.js';
-import { BillsScreen } from "./pages";
+
 import PromotionScreen from "./pages/PromotionScreen";
 import UserManagement from "./pages/UserManagement";
 import ImportProductScreen from "./pages/ImportProductScreen";
@@ -82,7 +82,7 @@ const App = () => {
               <Route path="/revenue" element={<ReportScreen token={token}/>} />
               <Route path="/importProduct" element={<ImportProductScreen token={token}/>} />
               <Route path="/promotions" element={<PromotionScreen token={token} role={role}/>} />
-              <Route path="/actions" element={<Actions token={token}/>} />
+              <Route path="/bills" element={<Bills token={token}/>} />
               <Route path="/usermanagement" element={<UserManagement token={token} role={role} />} />
             </Routes>
           </div>
