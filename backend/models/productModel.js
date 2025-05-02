@@ -15,7 +15,7 @@
       }
     ],
     cost: { type: Number, default: 0 },
-    bestSeller: { type: Boolean,},
+    newArrival: { type: Boolean, default: false },
     date: { type: Number, required: true },
     colors: [String],
   });

@@ -18,8 +18,14 @@ import {
   verifyEmail,
   verifyResetOtp,
   isAuthenticated,
-  resetPassword
+  resetPassword,
+  getUserProfile, 
+  addToWishlist,
+  getWishlist,
+  removeFromWishlist,
+  getUserWishlist
 } from '../controllers/userController.js';
+
 import authUser from '../middleware/auth.js';
 
 const userRouter = express.Router();
@@ -34,7 +40,10 @@ userRouter.get('/is-auth', authUser, isAuthenticated);
 userRouter.post('/send-reset-otp', sendResetOtp);
 userRouter.post('/verify-reset-otp', verifyResetOtp);
 userRouter.post('/reset-password', resetPassword);
-
+userRouter.get('/profile', authUser, getUserProfile);
+userRouter.post('/wishlist/add', authUser, addToWishlist);
+userRouter.get('/wishlist', authUser, getWishlist);
+userRouter.delete('/wishlist/:id', authUser, removeFromWishlist);
 // ADMIN - USER MANAGEMENT
 userRouter.get('/', getAllUsers);              // GET all users
 userRouter.post('/', createUser);
@@ -44,4 +53,5 @@ userRouter.patch('/block/:id', blockUser);        // PATCH: block user
 userRouter.patch('/unblock/:id', unblockUser);    // PATCH: unblock user
 userRouter.put('/:id', updateUser);
 userRouter.get('/:id', getUserById);
+userRouter.get('/:id/wishlist', getUserWishlist);
 export default userRouter;

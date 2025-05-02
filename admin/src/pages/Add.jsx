@@ -17,7 +17,8 @@ const Add = ({ token }) => {
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('Men');
   const [subCategory, setSubCategory] = useState('Topwear');
-  const [bestseller, setBestseller] = useState(false);
+  const [newArrival, setNewArrival] = useState(false);
+
 
   const sizeOptions = ['S', 'M', 'L', 'XL', 'XXL'];
   const [selectedSizes, setSelectedSizes] = useState([]);
@@ -34,7 +35,7 @@ const Add = ({ token }) => {
       formData.append('price', price);
       formData.append('category', category);
       formData.append('subCategory', subCategory);
-      formData.append('bestseller', bestseller);
+      formData.append('newArrival', newArrival);
 
       const formattedSizes = selectedSizes.map((size) => ({
         size,
@@ -64,7 +65,7 @@ const Add = ({ token }) => {
         setImage4(false);
         setPrice('');
         setSelectedSizes([]);
-        setBestseller(false);
+        setNewArrival(false);
         setColors([]);
         setNewColor('#000000');
       } else {
@@ -220,14 +221,15 @@ const Add = ({ token }) => {
 
       {/* Best seller */}
       <div className='flex gap-2 mt-2'>
-        <input
-          onChange={() => setBestseller(prev => !prev)}
-          checked={bestseller}
-          type="checkbox"
-          id='bestseller'
-        />
-        <label className='cursor-pointer' htmlFor="bestseller">Add to bestseller</label>
-      </div>
+  <input
+    onChange={() => setNewArrival(prev => !prev)}
+    checked={newArrival}
+    type="checkbox"
+    id='newArrival'
+  />
+  <label className='cursor-pointer' htmlFor="newArrival">Add to New Arrival</label>
+</div>
+
 
       <button type='submit' className='w-28 py-3 mt-4 bg-black text-white'>ADD</button>
     </form>

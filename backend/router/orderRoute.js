@@ -8,6 +8,7 @@ import {
   updateStatus, 
   verifyStripe, 
   getUserOrders,
+  addReviewToOrder,
   
 } from '../controllers/orderController.js';  // Import các controller trực tiếp từ file
 
@@ -29,6 +30,7 @@ orderRouter.post('/razorpay', authUser, placeOrderRazorpay);
 // User Features
 orderRouter.post('/userorders', authUser, userOrders);
 orderRouter.get('/user/:userId',  getUserOrders); // Trực tiếp sử dụng `getUserOrders` từ controller
+orderRouter.post('/:orderId/review', authUser, addReviewToOrder);
 // Verify Payment
 orderRouter.post('/verifyStripe', authUser, verifyStripe);
 

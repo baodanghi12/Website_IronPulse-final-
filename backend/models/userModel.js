@@ -8,7 +8,24 @@ const userSchema = new mongoose.Schema(
     phone: { type: String },
     avatar: { type: String },
     cartData: { type: Object, default: {} },
-
+    wishlist: {
+      type: [
+        {
+          _id: mongoose.Schema.Types.ObjectId,
+          title: String,
+          image: String,
+          price: Number,
+          category: String,
+          subCategory: String,
+        }
+      ],
+      default: [],
+    },
+    
+    shippingAddress: {
+      type: Object,
+      default: {},
+    },
     // Phân quyền: user hoặc admin
     role: {
       type: String,

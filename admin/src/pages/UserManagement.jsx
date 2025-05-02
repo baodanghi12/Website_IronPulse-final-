@@ -11,7 +11,6 @@ import {
   Form,
   Tabs,
   Select,
-  DatePicker,
 } from 'antd';
 import {
   EditOutlined,
@@ -22,7 +21,6 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
-const { TabPane } = Tabs;
 
 const UserManagement = ({ role }) => {
   const [users, setUsers] = useState([]);
@@ -33,15 +31,13 @@ const UserManagement = ({ role }) => {
   const [editingUser, setEditingUser] = useState(null);
   const [modalMode, setModalMode] = useState('view'); // view | edit | create
   const [userOrders, setUserOrders] = useState([]);
+  const [userWishlist, setUserWishlist] = useState([]);
+  const [activeDetailTab, setActiveDetailTab] = useState("1");
   const [form] = Form.useForm();
-  const [userInfo, setUserInfo] = useState(null);
-  
 
   useEffect(() => {
     fetchUsersAndStaff();
   }, []);
-
-  
 
   const fetchUsersAndStaff = async () => {
     setIsLoading(true);
@@ -59,23 +55,37 @@ const UserManagement = ({ role }) => {
 
   const handleViewUser = async (user) => {
     setEditingUser(user);
+    setActiveDetailTab("1");
     setModalMode('view');
+  
     const updatedUser = {
       ...user,
       dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth).format('YYYY-MM-DD') : null,
     };
     form.setFieldsValue(updatedUser);
     setIsModalVisible(true);
-
-    const userId = user._id;
-
-    try {
-      const res = await axios.get(`/api/order/user/${userId}`);
-      setUserOrders(res.data.orders || []);
-    } catch (err) {
-      message.error('Error loading order history');
+  
+    if (user.role === 'user') {
+      const userId = user._id;
+      try {
+        const [ordersRes, wishlistRes] = await Promise.all([
+          axios.get(`/api/order/user/${userId}`),
+          axios.get(`/api/user/${userId}/wishlist`)
+        ]);
+  
+        console.log('✅ Wishlist API response:', wishlistRes.data.wishlist); // ✅ Đặt đúng chỗ
+  
+        setUserOrders(ordersRes.data.orders || []);
+        setUserWishlist(wishlistRes.data.wishlist || []);
+      } catch (err) {
+        message.error('Error loading order history or wishlist');
+      }
+    } else {
+      setUserOrders([]);
+      setUserWishlist([]);
     }
   };
+  
 
   const handleCreateUser = () => {
     setEditingUser(null);
@@ -102,6 +112,28 @@ const UserManagement = ({ role }) => {
     }
   };
 
+  const handleBlockToggle = async (user) => {
+    try {
+      await axios.put(`/api/user/${user._id}/block`, {
+        isBlocked: !user.isBlocked,
+      });
+      message.success(`${user.isBlocked ? 'Unblocked' : 'Blocked'} successfully`);
+      fetchUsersAndStaff();
+    } catch (err) {
+      message.error('Cannot update user status');
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    try {
+      await axios.delete(`/api/user/${user._id}`);
+      message.success('User deleted');
+      fetchUsersAndStaff();
+    } catch (err) {
+      message.error('Failed to delete user');
+    }
+  };
+
   const columns = [
     {
       title: 'Avatar',
@@ -110,8 +142,8 @@ const UserManagement = ({ role }) => {
         <Avatar
           src={avatar || '/default-avatar.png'}
           onClick={(e) => {
-            e.stopPropagation(); // Prevent event propagation
-            handleViewUser(user); // Open modal when clicking avatar
+            e.stopPropagation();
+            handleViewUser(user);
           }}
           style={{ cursor: 'pointer' }}
         />
@@ -146,18 +178,6 @@ const UserManagement = ({ role }) => {
     },
   ];
 
-  const handleBlockToggle = async (user) => {
-    try {
-      await axios.put(`/api/user/${user._id}/block`, {
-        isBlocked: !user.isBlocked,
-      });
-      message.success(`${user.isBlocked ? 'Unblocked' : 'Blocked'} successfully`);
-      fetchUsersAndStaff();
-    } catch (err) {
-      message.error('Cannot update user status');
-    }
-  };
-
   return (
     <div className="container py-4">
       <Space className="mb-3">
@@ -173,36 +193,40 @@ const UserManagement = ({ role }) => {
         </Button>
       </Space>
 
-      <Tabs defaultActiveKey="1">
-        <TabPane tab="Users" key="1">
-          <Table
-            loading={isLoading}
-            dataSource={users.filter((user) =>
-              user.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
-              user.email?.toLowerCase().includes(searchValue.toLowerCase())
-            )}
-            columns={columns}
-            rowKey="_id"
-            scroll={{ x: true }}
-          />
-        </TabPane>
-
-        {/* Conditionally render the "Staff" tab based on role */}
-        {role === 'admin' && (
-  <TabPane tab="Staff" key="2">
-    <Table
-      loading={isLoading}
-      dataSource={staff.filter((user) =>
-        user.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchValue.toLowerCase())
-      )}
-      columns={columns}
-      rowKey="_id"
-      scroll={{ x: true }}
-    />
-  </TabPane>
-)}
-      </Tabs>
+      <Tabs defaultActiveKey="1" items={[
+        {
+          key: "1",
+          label: "Users",
+          children: (
+            <Table
+              loading={isLoading}
+              dataSource={users.filter((user) =>
+                user.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+                user.email?.toLowerCase().includes(searchValue.toLowerCase())
+              )}
+              columns={columns}
+              rowKey="_id"
+              scroll={{ x: true }}
+            />
+          ),
+        },
+        ...(role === 'admin' ? [{
+          key: "2",
+          label: "Staff",
+          children: (
+            <Table
+              loading={isLoading}
+              dataSource={staff.filter((user) =>
+                user.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+                user.email?.toLowerCase().includes(searchValue.toLowerCase())
+              )}
+              columns={columns}
+              rowKey="_id"
+              scroll={{ x: true }}
+            />
+          ),
+        }] : []),
+      ]} />
 
       <Modal
         open={isModalVisible}
@@ -213,45 +237,192 @@ const UserManagement = ({ role }) => {
         }}
         footer={
           modalMode === 'view'
-            ? [<Button onClick={() => setIsModalVisible(false)}>Close</Button>]
+            ? [<Button key="close" onClick={() => setIsModalVisible(false)}>Close</Button>]
             : [
-                <Button onClick={() => setIsModalVisible(false)}>Cancel</Button>,
-                <Button type="primary" onClick={handleSaveUser}>
-                  Save
-                </Button>,
+                <Button key="cancel" onClick={() => setIsModalVisible(false)}>Cancel</Button>,
+                <Button key="save" type="primary" onClick={handleSaveUser}>Save</Button>,
               ]
         }
+        width={800}
       >
-        <Form layout="vertical" form={form}>
-          <Form.Item label="Name" name="name" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item label="Email" name="email" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item label="Phone" name="phone">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Date of Birth" name="dateOfBirth">
-            <Input type="date" />
-          </Form.Item>
-          <Form.Item label="Password" name="password">
-            <Input.Password />
-          </Form.Item>
-          <Form.Item label="Role" name="role" initialValue="user">
-  {role === 'staff' ? (
-    <Input value="user" disabled />  // Nếu là Staff, chỉ có thể chọn User và không thể thay đổi
-  ) : (
-    <Select>
-      <Select.Option value="user">User</Select.Option>
-      <Select.Option value="staff">Staff</Select.Option>
-    </Select>
-  )}
-</Form.Item>
-          <Form.Item label="Status">
-            <Input disabled value={form.getFieldValue('isBlocked') ? 'Locked' : 'Active'} />
-          </Form.Item>
-        </Form>
+        <Tabs
+          activeKey={activeDetailTab}
+          onChange={setActiveDetailTab}
+          items={[
+            {
+              key: '1',
+              label: 'User Details',
+              children: (
+                <Form layout="vertical" form={form}>
+                  <Form.Item label="Name" name="name" rules={[{ required: true }]}>
+                    <Input />
+                  </Form.Item>
+                  <Form.Item label="Email" name="email" rules={[{ required: true }]}>
+                    <Input />
+                  </Form.Item>
+                  <Form.Item label="Phone" name="phone">
+                    <Input />
+                  </Form.Item>
+                  <Form.Item label="Date of Birth" name="dateOfBirth">
+                    <Input type="date" />
+                  </Form.Item>
+                  <Form.Item label="Password" name="password">
+                    <Input.Password />
+                  </Form.Item>
+                  <Form.Item label="Role" name="role" initialValue="user">
+                    {role === 'staff' ? (
+                      <Input value="user" disabled />
+                    ) : (
+                      <Select>
+                        <Select.Option value="user">User</Select.Option>
+                        <Select.Option value="staff">Staff</Select.Option>
+                      </Select>
+                    )}
+                  </Form.Item>
+                  <Form.Item label="Status">
+                    <Input disabled value={form.getFieldValue('isBlocked') ? 'Locked' : 'Active'} />
+                  </Form.Item>
+                </Form>
+              ),
+            },
+            ...(editingUser?.role === 'user'
+              ? [
+                  {
+                    key: '2',
+                    label: 'Order History',
+                    children: (
+                      <Table
+  dataSource={userOrders}
+  columns={[
+    {
+      title: 'Order ID',
+      dataIndex: '_id',
+      render: (id) => (
+        <span
+          style={{
+            backgroundColor: '#e6f7ff',
+            padding: '2px 8px',
+            borderRadius: '5px',
+            color: '#1890ff',
+            fontWeight: 500,
+          }}
+        >
+          #{id.slice(-6)}
+        </span>
+      ),
+    },
+    {
+      title: 'Total',
+      render: (order) =>
+        typeof order.amount === 'number'
+          ? order.amount.toLocaleString('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            })
+          : 'N/A',
+    },
+    
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      render: (status) => {
+        const colorClass =
+          status === 'Delivered'
+            ? 'bg-green-500'
+            : status === 'Shipped'
+            ? 'bg-blue-500'
+            : status === 'Packing'
+            ? 'bg-yellow-500'
+            : status === 'Out for delivery'
+            ? 'bg-orange-500'
+            : 'bg-gray-500';
+        return (
+          <span
+            className={`${colorClass} text-white px-2 py-1 rounded text-sm`}
+            style={{ display: 'inline-block' }}
+          >
+            {status}
+          </span>
+        );
+      },
+    },
+    {
+      title: 'Created At',
+      dataIndex: 'createdAt',
+      render: (value) => moment(value).format('YYYY-MM-DD HH:mm'),
+    },
+    {
+      title: 'Delivered At',
+      dataIndex: 'updatedAt',
+      render: (value, record) =>
+        record.status === 'Delivered'
+          ? moment(value).format('YYYY-MM-DD HH:mm')
+          : '—',
+    },
+  ]}
+  rowKey="_id"
+  pagination={false}
+/>
+                    ),
+                  },
+                  {
+                    key: '3',
+                    label: 'Wishlist',
+                    children: (
+                      <Table
+  dataSource={userWishlist}
+  columns={[
+    {
+      title: 'Product ID',
+      dataIndex: '_id',
+      render: (id) => (
+        <span
+          style={{
+            backgroundColor: '#f0fdf4',
+            padding: '2px 8px',
+            borderRadius: '5px',
+            color: '#10b981',
+            fontWeight: 500,
+          }}
+        >
+          #{id?.slice(-6)}
+        </span>
+      ),
+    },
+    {
+      title: 'Name',
+      dataIndex: 'title', // hoặc 'name' nếu title không tồn tại
+      render: (title, record) => title || record.name || 'N/A',
+    },
+    {
+      title: 'Category',
+      dataIndex: 'category',
+      render: (cat) => cat || '—',
+    },
+    {
+      title: 'Sub Category',
+      dataIndex: 'subCategory',
+      render: (sub) => sub || '—',
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      render: (price) =>
+        typeof price === 'number'
+          ? price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })
+          : 'N/A',
+    },
+  ]}
+  rowKey="_id"
+  pagination={false}
+/>
+
+                    ),
+                  },
+                ]
+              : []),
+          ]}
+        />
       </Modal>
     </div>
   );

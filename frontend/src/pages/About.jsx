@@ -1,9 +1,14 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import Title from '../components/Title'
 import { assets } from '../assets/assets'
 import NewsletterBox from '../components/NewsletterBox'
 
 const About = () => {
+
+   // Scroll to top on mount
+   useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
   return (
     <div>
       

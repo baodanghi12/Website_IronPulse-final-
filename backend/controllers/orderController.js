@@ -3,6 +3,7 @@ import userModel from "../models/userModel.js"
 import Stripe from "stripe"
 import Order from '../models/orderModel.js';
 import BillModel from '../models/BillModel.js'; 
+import mongoose from 'mongoose';
 // global variables
 const currency = "inr" // currency for stripe payment
 const deliveryCharges = 10 // delivery charges for stripe payment
@@ -11,36 +12,61 @@ const deliveryCharges = 10 // delivery charges for stripe payment
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 // Placing orders using COD Method
-const placeOrder = async (req,res) => {
-
+const placeOrder = async (req, res) => {
+  
     try {
-        
-        const { userId, items, amount, address} = req.body;
-
-        const orderData = {
-            userId,
-            items,
-            address,
-            amount,
-            paymentMethod:"COD",
-            payment:false,
-            date: Date.now()
-        }
-
-        const newOrder = new orderModel(orderData)
-        await newOrder.save()
-
-        await userModel.findByIdAndUpdate(userId,{cartData:{}})
-
-        res.json({success:true,message:"Order Placed"})
-
+      const { items, amount, address,  phone } = req.body;
+      const {
+        firstName,
+        lastName,
+        street,
+        city,
+        state,
+        zipcode,
+        country
+      } = address || {};
+      const userId = req.userId;
+      
+      const enrichedItems = items.map(item => ({
+        ...item,
+        productId: item._id // 👈 gán ID gốc của sản phẩm
+      }));
+      
+      const orderData = {
+        userId,
+        items: enrichedItems,
+        address: {
+          firstName,
+          lastName,
+          phone,
+          street,
+          city,
+          state,
+          zipcode,
+          country
+        },
+        amount,
+        paymentMethod: "COD",
+        payment: false,
+        date: Date.now()
+      };
+  
+      const newOrder = new orderModel(orderData);
+      await newOrder.save();
+  
+      await userModel.findByIdAndUpdate(userId, {
+        cartData: {},
+        shippingAddress: address, // ✅ lưu địa chỉ
+        phone: phone,
+      });
+      
+  
+      res.json({ success: true, message: "Order Placed" });
     } catch (error) {
-        console.log(error);
-        res.json({success:false,message:error.message})
-        
+      console.error(error);
+      res.status(500).json({ success: false, message: error.message });
     }
-
-}
+  };
 
 // Placing orders using Stripe Method
 const placeOrderStripe = async (req,res) => {
@@ -141,22 +167,20 @@ const allOrders = async (req,res) => {
 }
 
 // User Orders data for Forntend
-const userOrders = async (req,res) => {
+const userOrders = async (req, res) => {
     try {
-        
-        const {userId} = req.body
-
-        const orders = await orderModel.find({userId})
-        res.json({success:true,orders})
-
+      const userId = new mongoose.Types.ObjectId(req.userId);
+  
+      const orders = await orderModel.find({ userId }).sort({ createdAt: -1 });
+  
+      res.json({ success: true, orders });
     } catch (error) {
-        console.log(error);
-        res.json({success:false,message:error.message})
+      console.log(error);
+      res.json({ success: false, message: error.message });
     }
-}
+  };
 
-
-const updateStatus = async (req, res) => {
+  const updateStatus = async (req, res) => {
     try {
       const { orderId, status, payment } = req.body;
   
@@ -170,14 +194,18 @@ const updateStatus = async (req, res) => {
         return res.status(404).json({ success: false, message: "Order không tồn tại" });
       }
   
-      // ✅ Nếu đơn đã giao thành công + thanh toán xong thì lưu vào Bill
+      // ✅ Nếu đơn đã giao và thanh toán → lưu vào Bill
       if (updatedOrder.status === 'Delivered' && updatedOrder.payment === true) {
-        const existingBill = await BillModel.findOne({ customer_id: updatedOrder.userId, total: updatedOrder.amount });
-      
+        const existingBill = await BillModel.findOne({
+          customer_id: updatedOrder.userId,
+          total: updatedOrder.amount,
+          createdAt: updatedOrder.createdAt
+        });
+  
         if (!existingBill) {
           const bill = new BillModel({
             products: updatedOrder.items.map(item => ({
-              _id: item._id ? item._id.toString() : '',
+              _id: item._id?.toString() || '',
               createdBy: updatedOrder.userId,
               count: item.quantity,
               cost: 0,
@@ -195,20 +223,20 @@ const updateStatus = async (req, res) => {
             customer_id: updatedOrder.userId,
             shippingAddress: {
               address: `${updatedOrder.address?.street || ''}, ${updatedOrder.address?.city || ''}, ${updatedOrder.address?.state || ''}, ${updatedOrder.address?.country || ''}`,
-              _id: updatedOrder.address?._id ? updatedOrder.address._id.toString() : '',
+              _id: updatedOrder.address?._id?.toString() || '',
             },
             paymentStatus: 1,
             paymentMethod: updatedOrder.paymentMethod,
+            address: updatedOrder.address, // ⬅ thêm toàn bộ address để dễ truy xuất tên
+            date: updatedOrder.date || updatedOrder.createdAt, // ⬅ dùng date để hiển thị ngày tạo
           });
-      
+  
           await bill.save();
-          console.log(`✅ Bill đã được lưu từ đơn hàng ${updatedOrder._id}`);
+          console.log(`✅ Bill đã lưu từ đơn hàng ${updatedOrder._id}`);
         }
       }
-      
   
       res.json({ success: true, message: "Cập nhật trạng thái và thanh toán thành công", order: updatedOrder });
-  
     } catch (error) {
       console.log(error);
       res.status(500).json({ success: false, message: error.message });
@@ -235,9 +263,42 @@ const getUserOrders = async (req, res) => {
     }
   };
 
-
+  const addReviewToOrder = async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const { productId, rating, comment } = req.body;
+      const userId = req.userId;
+  
+      console.log("🧾 orderId:", orderId);
+      console.log("👤 userId:", userId);
+      console.log("📦 productId:", productId);
+  
+      const order = await orderModel.findOne({ _id: orderId, userId });
+  
+      if (!order) {
+        console.log("❌ Order not found");
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+  
+      const item = order.items.find((item) => item.productId === productId);
+  
+      if (!item) {
+        console.log("❌ Product not found in items:", order.items.map(i => i.productId));
+        return res.status(404).json({ success: false, message: 'Product not found in order' });
+      }
+  
+      item.review = { rating, comment, createdAt: new Date() };
+      await order.save();
+  
+      console.log("✅ Review added:", item.review);
+      res.json({ success: true, review: item.review });
+    } catch (error) {
+      console.error('Review error:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
   
   
   
   
-export { verifyStripe ,placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus, getUserOrders,}
+export { verifyStripe ,placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus, getUserOrders, addReviewToOrder}

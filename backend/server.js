@@ -22,6 +22,8 @@ import promotionRouter from './router/promotionRouter.js'
 import uploadRouter from './router/upload.js';
 import cookieParser from 'cookie-parser';
 import authRouter from './router/authRoute.js';
+import flashSaleRoutes from "./router/flashSaleRoutes.js";
+
 // App Config
 const app = express();
 const port = process.env.PORT || 4000
@@ -56,6 +58,7 @@ app.use('/uploads', express.static('public/uploads'));
 app.use('/api/promotions', promotionRouter)
 app.use('/api/notifications', notificationRoute);
 app.use('/api/auth', authRouter)
+app.use("/api/flashsale", flashSaleRoutes);
 
 app.get('/',(req,res)=>{
     res.send("API Working")

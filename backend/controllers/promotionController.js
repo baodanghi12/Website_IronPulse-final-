@@ -56,3 +56,18 @@ export const updatePromotion = async (req, res) => {
     res.status(500).json({ error: 'Server Error' });
   }
 };
+
+export const checkPromotion = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const promo = await Promotion.findOne({ code });
+
+    if (!promo || promo.numOfAvailable <= 0) {
+      return res.status(404).json({ success: false, message: 'Mã không hợp lệ hoặc đã hết lượt dùng' });
+    }
+
+    res.json({ success: true, promotion: promo });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Lỗi hệ thống' });
+  }
+};

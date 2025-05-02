@@ -21,6 +21,7 @@ const EditForm = ({ token, productId, onUpdateSuccess }) => {
   const [colors, setColors] = useState([]);
   const [newColor, setNewColor] = useState('#000000');
   const [importProducts, setImportProducts] = useState([]);
+  const [newArrival, setNewArrival] = useState(false);
   // Gọi API để lấy thông tin sản phẩm
   useEffect(() => {
     setLoading(true);
@@ -44,6 +45,7 @@ const EditForm = ({ token, productId, onUpdateSuccess }) => {
         setCategory(p.category);
         setSubCategory(p.subCategory);
         setBestSeller(p.bestseller);
+        setNewArrival(p.newArrival || false);
         setFlashSale(p.flashSale);
         setSizes(p.sizes || []);
         setColors(p.colors || []);
@@ -77,6 +79,7 @@ const EditForm = ({ token, productId, onUpdateSuccess }) => {
     formData.append('subCategory', subCategory);
     formData.append('bestSeller', bestSeller ? 'true' : 'false');
     formData.append('flashSale', flashSale ? 'true' : 'false');
+    formData.append('newArrival', newArrival ? 'true' : 'false');
     formData.append('sizes', JSON.stringify(sizes));
     formData.append('colors', JSON.stringify(colors));
   
@@ -286,6 +289,14 @@ const EditForm = ({ token, productId, onUpdateSuccess }) => {
           />
           <p className="ml-2">Flash Sale</p>
         </div>
+        <div className="flex items-center">
+  <input
+    type="checkbox"
+    checked={newArrival}
+    onChange={() => setNewArrival(!newArrival)}
+  />
+  <p className="ml-2">New Arrival</p>
+</div>
       </div>
 
       {/* Submit Button */}

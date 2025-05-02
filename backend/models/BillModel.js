@@ -1,38 +1,42 @@
-// billModel.js
 import mongoose from 'mongoose';
 
-const productSchema = new mongoose.Schema({
-  _id: String,
-  createdBy: String,
-  count: Number,
-  cost: Number,
-  subProductId: String,
-  image: String,
-  color: String,
-  price: Number,
-  qty: Number,
-  productId: String,
-  title: String,
-  __v: Number,
+const itemSchema = new mongoose.Schema({
+  productId: { type: String },
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  quantity: { type: Number, required: true },
+  colors: { type: [String], default: [] },
+  category: { type: String },
+  subCategory: { type: String },
+  size: { type: String },
 });
 
-
-const shippingAddressSchema = new mongoose.Schema({
-  address: String,
-  _id: String,
+const addressSchema = new mongoose.Schema({
+  firstName: String,
+  lastName: String,
+  phone: String,
+  street: String,
+  city: String,
+  state: String,
+  country: String,
+  zipcode: String,
 });
 
 const billSchema = new mongoose.Schema(
   {
-    products: [productSchema],
-    total: Number,
-    status: String,
-    customer_id: String,
-    shippingAddress: shippingAddressSchema,
-    paymentStatus: Number,
-    paymentMethod: String,
+    userId: { type: String },
+    items: [itemSchema],
+    amount: { type: Number },
+    address: addressSchema,
+    status: { type: String, default: 'Delivered' },
+    payment: { type: Boolean, default: true },
+    paymentMethod: { type: String },
+    shipping: { type: Number },
+    discount: { type: Number },
+    note: { type: String },
+    date: { type: Number },
   },
-  { timestamps: true } // tự động thêm createdAt và updatedAt
+  { timestamps: true }
 );
 
 const BillModel = mongoose.models.Bill || mongoose.model('Bill', billSchema);

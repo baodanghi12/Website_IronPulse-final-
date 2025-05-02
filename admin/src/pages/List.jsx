@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import EditForm from "../components/EditForm";
 import { VND } from "../utils/handleCurrency";
 import { useLocation } from 'react-router-dom';
+
+import FlashSaleList from '../components/FlashSaleList';
 const List = ({ token }) => {
   const [list, setList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,6 +14,7 @@ const List = ({ token }) => {
   const [editProduct, setEditProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
+  
   const [inventoryStats, setInventoryStats] = useState({
     totalCategories: 0,
     totalProducts: 0,
@@ -168,7 +171,7 @@ const List = ({ token }) => {
       🔍
     </span>
   </div>
-
+    
 </div>
 
       {/* Overall Inventory */}
@@ -206,6 +209,7 @@ const List = ({ token }) => {
 
   </div>
 </div>
+<FlashSaleList allProducts={list} token={token} onSuccess={fetchList} />
 
       
 
@@ -228,11 +232,15 @@ const List = ({ token }) => {
             <div
               className="grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr_1fr_1fr] items-center gap-3 p-3 bg-white border border-gray-200 rounded-md shadow-sm hover:shadow-md transition"
             >
-              <img
-                src={item.image[0]}
-                alt={item.name}
-                className="w-14 h-14 object-cover rounded"
-              />
+              <div className="relative w-20 h-20">
+  <img src={item.image[0]} alt={item.name} className="w-full h-full object-cover rounded-md" />
+  
+  {item.newArrival && (
+    <div className="absolute top-0 left-0 bg-red-500 text-white text-[10px] px-1 py-[1px] font-semibold rotate-[-45deg] origin-top-left">
+      NEW
+    </div>
+  )}
+</div>
               <p className="truncate" title={item.name}>
                 {item.name}
               </p>
@@ -304,9 +312,11 @@ const List = ({ token }) => {
                 />
               </div>
             )}
+            
           </React.Fragment>
         ))}
       </div>
+      
     </>
   );
 };

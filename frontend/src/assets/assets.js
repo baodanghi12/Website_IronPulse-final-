@@ -54,10 +54,17 @@ import p_img50 from './p_img50.png'
 import p_img51 from './p_img51.png'
 import p_img52 from './p_img52.png'
 
-
+import img1 from './img1.png'
+import img2 from './img2.png'
+import img3 from './img3.png'
+import img4 from './img4.png'
+import img5 from './img5.png'
+import img6 from './img6.png'
 import logo from './logo.png'
 import logo11 from './logo11.png'
-import hero_img from './hero_img.png'
+import hero_img_1 from './hero_img_1.png'
+import hero_img_2 from './hero_img_2.png'
+import hero_img_3 from './hero_img_3.png'
 import cart_icon from './cart_icon.png'
 import bin_icon from './bin_icon.png'
 import dropdown_icon from './dropdown_icon.png'
@@ -74,11 +81,172 @@ import contact_img from './contact_img.png'
 import razorpay_logo from './razorpay_logo.png'
 import stripe_logo from './stripe_logo.png'
 import cross_icon from './cross_icon.png'
-
+import f_img from './f_img.png'
+import I_img from './I_img.png'
+import t_img from './t_img.png'
+import y_img from './y_img.png'
+import menimg from './menimg.png'
+import womenimg from './womenimg.png'
+import kidimg from './kidimg.png'
+import saleimg from './saleimg.png'
+import latestimg from './latestimg.png'
+import winterimg from './winterimg.png'
+import sale  from './sale.png'
+import shirt  from './shirt.png'
+import pants  from './pants.png'
+import shoes  from './shoes.png'
+import accessory  from './accessory.png'
+import lastSize  from './lastSize.png'
+import sale1  from './sale1.png'
+import shirt1  from './shirt1.png'
+import pants1  from './pants1.png'
+import shoes1  from './shoes1.png'
+import accessory1  from './accessory1.png'
+import lastSize1 from './lastSize1.png'
+import dress1 from './dress1.png'
+import shirt3  from './shirt3.png'
+import pants3  from './pants3.png'
+import shoes3  from './shoes3.png'
+import lastSize3 from './lastSize3.png'
+import minimalistimg from './minimalistimg.png'
+import casuallookimg from './casuallookimg.png'
+import streetwearimg from './streetwearimg.png'
+import winterimgg from './winterimgg.png'
+import flannelimg from './flannelimg.png'
+import helaimg from './helaimg.png'
+import lastSize4 from './lastSize4.png'
+import boxyimg from './boxyimg.png'
+import urbanimg from './urbanimg.png'
+import somiimg from './somiimg.png'
+import aothun from './aothun.png'
+import aothunboxy from './aothunboxy.png'
+import aothunover from './aothunover.png'
+import lastSize5 from './lastSize5.png'
+import aothunkid from './aothunkid.png'
+import quankid from './quankid.png'
+import giaykid from './giaykid.png'
+import lastSize6 from './lastSize6.png'
+import bannerkid from './bannerkid.png'
+import aothun1 from './aothun1.png'
+import aokhoac from './aokhoac.png'
+import aosomi from './aosomi.png'
+import quannam from './quannam.png'
+import quanshort from './quanshort.png'
+import quanjean from './quanjean.png'
+import quandai from './quandai.png'
+import quanau from './quanau.png'
+import aothunnu from './aothunnu.png'
+import aokhoacnu from './aokhoacnu.png'
+import aocroptop from './aocroptop.png'
+import aosominu from './aosominu.png'
+import quanjeannu from './quanjeannu.png'
+import quantaynu from './quantaynu.png'
+import quanshortnu from './quanshortnu.png'
+import salenu from './salenu.png'
+import quannu from './quannu.png'
+import vaynu from './vaynu.png'
+import vayngannu from './vayngannu.png'
+import vaydainu from './vaydainu.png'
+import damdutiecnu from './damdutiecnu.png'
+import damcongsonu from './damcongsonu.png'
+import aothunkid1 from './aothunkid1.png'
+import aokhoackid1 from './aokhoackid1.png'
+import somikid1 from './somikid1.png'
+import quanshortkid from './quanshortkid.png'
+import quandaikid from './quandaikid.png'
+import quanjeankid from './quanjeankid.png'
+import w_img from './w_img.png'
+import heart_filled from './heart_filled.png'
+import heart_outline from './heart_outline.png'
 export const assets = {
+    heart_filled,
+    heart_outline,
+    w_img,
+    quanshortkid,
+    quanjeankid,
+    quandaikid,
+    aothunkid1,
+    aokhoackid1,
+    vayngannu,
+    somikid1,
+    vaydainu,
+    vaynu,
+    damdutiecnu,
+    damcongsonu,
+    quannu,
+    quanjeannu,
+    quantaynu,
+    quanshortnu,
+    salenu,
+    aothunnu,
+    aokhoacnu,
+    aocroptop,
+    aosominu,
+    quannam,
+    quanshort,
+    quanjean,
+    quandai,
+    quanau,
+    aothun1,
+    aokhoac,
+    aosomi,
+    bannerkid,
+    quankid,
+    giaykid,
+    lastSize6,
+    aothunkid,
+    aothun,
+    aothunboxy,
+    aothunover,
+    lastSize5,
+    boxyimg,
+    urbanimg,
+    somiimg,
+    lastSize4,
+    helaimg,
+    streetwearimg,
+    winterimgg,
+    flannelimg,
+    casuallookimg,
+    minimalistimg,
+    lastSize3,
+    shoes3, 
+    pants3,
+    shirt3,
+    sale,
+    shirt,
+    pants,
+    shoes,
+    accessory,
+    lastSize,
+    sale1,
+    shirt1,
+    pants1,
+    shoes1,
+    accessory1,
+    lastSize1,
+    dress1,
+    menimg,
+    womenimg,
+    kidimg,
+    saleimg,
+    latestimg,
+    winterimg,
+    img1,
+    img2,
+    img3,
+    img4,
+    img5,
+    img6,
+    y_img,
+    t_img,
+    I_img,
+    f_img,
+    hero_img_1,
+    hero_img_2,
+    hero_img_3,
     logo,
     logo11,
-    hero_img,
     cart_icon,
     dropdown_icon,
     exchange_icon,

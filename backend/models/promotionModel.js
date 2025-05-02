@@ -9,10 +9,15 @@ const promotionSchema = new mongoose.Schema(
     numOfAvailable: { type: Number, required: true },
     value: { type: Number, required: true },
     type: { type: String, enum: ['percent', 'amount'], required: true },
-    imageURL: { type: String },
+    
+
+    startDate: { type: Date, required: true },
+    endDate: { type: Date, required: true },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
+
 
 const Promotion = mongoose.model('Promotion', promotionSchema);
 

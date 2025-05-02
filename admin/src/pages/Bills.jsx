@@ -71,9 +71,10 @@ const Bills = ({ token }) => {
           <h2>Bill Details</h2>
   
           <p><strong>Bill ID:</strong> #${bill._id.slice(-6).toUpperCase()}</p>
-          <p><strong>Name:</strong> ${bill.address?.fristName} ${bill.address?.lastName}</p>
-          <p><strong>Phone:</strong> (+84) ${bill.address?.phone}</p>
-          <p><strong>Address:</strong> ${bill.address?.street}, ${bill.address?.city}, ${bill.address?.state}</p>
+         <p><strong>Name:</strong> ${bill.shippingAddress?.firstName} ${bill.shippingAddress?.lastName}</p>
+<p><strong>Phone:</strong> (+84) ${bill.shippingAddress?.phone}</p>
+<p><strong>Address:</strong> ${bill.shippingAddress?.street}, ${bill.shippingAddress?.city}, ${bill.shippingAddress?.state}</p>
+
           <p><strong>Date:</strong> ${new Date(bill.date).toLocaleString()}</p>
   
           <h3>Items:</h3>
@@ -146,9 +147,22 @@ const Bills = ({ token }) => {
                     #{bill._id.slice(-6).toUpperCase()}
                   </span>
                 </td>
-                <td className="px-4 py-2">{bill.address?.fristName} {bill.address?.lastName}</td>
-                <td className="px-4 py-2">{bill.address?.street}, {bill.address?.city}, {bill.address?.state}</td>
-                <td className="px-4 py-2">{new Date(bill.date).toLocaleString()}</td>
+                <td className="px-4 py-2">
+  {bill.address?.firstName || bill.address?.name || 'N/A'} {bill.address?.lastName || ''}
+</td>
+<td className="px-4 py-2">
+  {`${bill.address?.street || ''}, ${bill.address?.city || ''}, ${bill.address?.state || ''}`}
+</td>
+
+
+
+
+
+<td className="px-4 py-2">
+  {bill.createdAt ? new Date(bill.createdAt).toLocaleString() : 'N/A'}
+</td>
+
+
                 <td className="px-4 py-2">{bill.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
                 <td className="px-4 py-2">{currency} {bill.amount.toLocaleString()}</td>
               </tr>
@@ -201,9 +215,13 @@ const Bills = ({ token }) => {
               #{selectedBill._id.slice(-6).toUpperCase()}
             </span>
           </p>
-          <p><strong>Name:</strong> {selectedBill.address?.fristName} {selectedBill.address?.lastName}</p>
-          <p><strong>Phone:</strong> {selectedBill.address?.phone}</p>
-          <p><strong>Address:</strong> {selectedBill.address?.street}, {selectedBill.address?.city}, {selectedBill.address?.state}</p>
+          <p><strong>Name:</strong> {selectedBill.shippingAddress?.firstName || 'N/A'} {selectedBill.shippingAddress?.lastName || ''}</p>
+<p><strong>Address:</strong> {`${selectedBill.shippingAddress?.street || ''}, ${selectedBill.shippingAddress?.city || ''}, ${selectedBill.shippingAddress?.state || ''}, ${selectedBill.shippingAddress?.country || ''}, ${selectedBill.shippingAddress?.zipcode || ''}`}</p>
+
+
+<p><strong>Phone:</strong> {selectedBill.shippingAddress?.phone}</p>
+
+
           <p><strong>Date:</strong> {new Date(selectedBill.date).toLocaleString()}</p>
         </div>
       </div>

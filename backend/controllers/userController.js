@@ -2,6 +2,7 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
+import productModel from '../models/productModel.js';
 // import { createNotification } from '../utils/createNotification.js';
 import { OAuth2Client } from "google-auth-library";
 import transporter from '../config/nodemailer.js'
@@ -47,10 +48,10 @@ const googleLogin = async (req, res) => {
     const token = createToken(user._id);
 
     res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // ✅ Local dev sẽ là false
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // ✅ Local dev sẽ là 'lax'
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+      httpOnly: true, // 🛡️ Cookie chỉ server đọc được
+      secure: process.env.NODE_ENV === 'production', // 🛡️ Local thì false, production thì true
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 🛡️ Localhost thì lax
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 🕒 7 ngày
     });
 
     res.json({ success: true, token });
@@ -76,20 +77,22 @@ const loginUser = async (req, res) => {
     const token = jwt.sign(
       {
         id: user._id,
-        role: user.role, // role: 'admin' | 'staff' | ...
+        role: user.role,
       },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
-
-    const token1 = createToken(user._id);
-
-    res.cookie('token', token1, {
+    
+    const token1 = createToken(user._id); // chuẩn theo expiresIn: '7d'
+    
+    // 🛠️ Sửa dòng dưới:
+    res.cookie('token', token1, { // 💥 Dùng token1
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // đúng là *1000
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+    
 
     res.json({ success: true, token, token1, role: user.role });
   } catch (error) {
@@ -119,10 +122,10 @@ const registerUser = async (req, res) => {
     const token = createToken(user._id);
 
     res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true, // 🛡️ Cookie chỉ server đọc được
+      secure: process.env.NODE_ENV === 'production', // 🛡️ Local thì false, production thì true
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 🛡️ Localhost thì lax
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 🕒 7 ngày
     });
 
     // Gửi email thông báo admin
@@ -315,13 +318,13 @@ const unblockUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role, avatar, isBlocked, phone, dateOfBirth } = req.body;
+    const { name, email, role, avatar, isBlocked, phone, dateOfBirth, shippingAddress } = req.body;
 
     const updatedUser = await userModel.findByIdAndUpdate(
       id,
       {
         name, email, role, avatar, isBlocked, phone,
-        dateOfBirth,
+        dateOfBirth, shippingAddress
       },
       { new: true }
     );
@@ -541,6 +544,124 @@ const verifyResetOtp = async (req, res) => {
     return res.json({ success: false, message: error.message });
   }
 };
+const getUserProfile = async (req, res) => {
+  try {
+    
+    if (!req.userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized: Missing userId' });
+    }
+
+    const user = await userModel.findById(req.userId).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('❌ getUserProfile error:', error.stack); // in chi tiết lỗi
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+//them san pham yeu thichthich
+const addToWishlist = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { productId } = req.body;
+
+    if (!userId || !productId) {
+      return res.status(400).json({ success: false, message: 'Missing userId or productId' });
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const alreadyExists = user.wishlist.some((item) => {
+      return item && item._id?.toString() === productId;
+    });
+
+    if (alreadyExists) {
+      return res.status(400).json({ success: false, message: 'Already in wishlist' });
+    }
+
+    const product = await productModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    user.wishlist.push({
+      _id: product._id,
+      title: product.title || product.name,
+      image: product.image?.[0] || '',
+      price: product.price,
+      category: product.category,
+      subCategory: product.subCategory,
+    });
+
+    user.markModified('wishlist');
+    await user.save();
+
+    res.json({ success: true, message: 'Added to wishlist' });
+  } catch (err) {
+    console.error('❌ [addToWishlist] Error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+// líst san pham yeu thichthich
+const getWishlist = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.json({ success: true, wishlist: user.wishlist || [] });
+  } catch (error) {
+    console.error("❌ Get wishlist error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+//xoa whishlist
+const removeFromWishlist = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const productId = req.params.id;
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.wishlist = user.wishlist.filter(
+      (item) => item && item._id?.toString() !== productId
+    );
+
+    user.markModified('wishlist');
+    await user.save();
+
+    res.json({ success: true, message: 'Removed from wishlist' });
+  } catch (err) {
+    console.error('❌ Error removing from wishlist:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+const getUserWishlist = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.json({ success: true, wishlist: user.wishlist });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 
 
 export {
@@ -562,5 +683,10 @@ export {
   verifyEmail,
   verifyResetOtp,
   resetPassword,
-  isAuthenticated
+  isAuthenticated,
+  getUserProfile,
+  addToWishlist,
+  getWishlist,
+  removeFromWishlist,
+  getUserWishlist
 };

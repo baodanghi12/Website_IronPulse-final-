@@ -224,11 +224,11 @@ const Orders = ({ token }) => {
                     #{order._id.slice(-6).toUpperCase()}
                   </span>
                 </td>
-                <td className='px-4 py-2'>{`${order.address?.fristName} ${order.address?.lastName}`}</td>
+                <td className='px-4 py-2'>{`${order.address?.firstName || order.address?.name || 'No name'}`}</td>
                 <td className='px-4 py-2'>
                   {`${order.address?.street}, ${order.address?.city}, ${order.address?.state}`}
                 </td>
-                <td className='px-4 py-2'>{new Date(order.date).toLocaleString()}</td>
+                <td className='px-4 py-2'>{order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A'}</td>
                 <td className='px-4 py-2'>{order.items?.reduce((total, item) => total + item.quantity, 0)}</td>
                 <td className='px-4 py-2'>{currency} {order.amount}</td>
                 <td className='px-4 py-2'>
@@ -298,10 +298,10 @@ const Orders = ({ token }) => {
                      #{selectedOrder._id.slice(-6).toUpperCase()}
                   </span>
                 </p>
-                  <p><strong>Name:</strong> {selectedOrder.address?.fristName} {selectedOrder.address?.lastName}</p>
+                <p><strong>Name:</strong> {selectedOrder.address?.firstName || ''} {selectedOrder.address?.lastName || ''}</p>
                   <p><strong>Phone:</strong> {selectedOrder.address?.phone}</p>
                   <p><strong>Address:</strong> {selectedOrder.address?.street}, {selectedOrder.address?.city}, {selectedOrder.address?.state}, {selectedOrder.address?.country}, {selectedOrder.address?.zipcode}</p>
-                  <p><strong style={{ marginRight: '5px' }}>Date:</strong>{selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : new Date(selectedOrder.date).toLocaleString()}</p>
+                  <p><strong>Date:</strong> {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : 'N/A'}</p>
                   
 
 
@@ -479,10 +479,10 @@ const Orders = ({ token }) => {
               {/* Summary */}
               <div className='flex flex-col text-right space-y-1'>
               
-                <p><strong>Subtotal:</strong> {currency} {selectedOrder.subtotal}</p>
-                <p><strong>Discount:</strong> {currency} {selectedOrder.discount}</p>
-                <p><strong>Shipping Fee:</strong> {currency} {selectedOrder.shippingFee ?? 10}</p>
-                <p><strong>Total Amount:</strong> {currency} {selectedOrder.amount}</p>
+              <p><strong>Subtotal:</strong> {currency} {selectedOrder.subtotal ?? 0}</p>
+<p><strong>Discount:</strong> {currency} {selectedOrder.discount ?? 0}</p>
+<p><strong>Shipping Fee:</strong> {currency} {selectedOrder.shippingFee ?? 0}</p>
+<p><strong>Total Amount:</strong> {currency} {selectedOrder.amount ?? 0}</p>
                 
 
 

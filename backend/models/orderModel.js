@@ -14,6 +14,11 @@ const orderSchema = new mongoose.Schema({
       category: { type: String },
       subCategory: { type: String },
       size: { type: String },
+      review: {
+        rating: { type: Number, min: 1, max: 5 },
+        comment: { type: String },
+        createdAt: { type: Date }
+      },
     }
   ],
   amount: { type: Number, required: true },

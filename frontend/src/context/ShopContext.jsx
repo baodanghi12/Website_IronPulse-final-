@@ -1,7 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-refresh/only-export-components */
-import React, { useEffect, useState } from "react";
-import { createContext } from "react";
+import React, { useEffect, useState, createContext } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -9,209 +7,338 @@ import axios from "axios";
 export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
-
-    const currency = '$';
-    const delivery_fee = 10;
-    const backendUrl = import.meta.env.VITE_BACKEND_URL
-    const [isLoggedin, setIsLoggedin] = useState(false);
-    const [userData, setUserData] = useState(false)
-    const [search,setSearch] = useState('');
-    const [showSearch,setShowSearch] = useState(false);
-    const [cartItems,setCartItems] = useState({});
-    const [products,setProducts] = useState([]);
-    const [token,setToken] = useState('')
-    const navigate = useNavigate()
-    const [comments, setComments] = useState([
-        { productId: 'abc123', user: 'Đạt', content: 'Sản phẩm rất tốt!', date: '20/04/2025' },
-        { productId: 'abc123', user: 'Bảo', content: 'Hài lòng lắm.', date: '21/04/2025' },
-      ]);
-
-
-      const addToCart = async (itemId, size, color, quantity = 1) => {
-        if (!size) {
-          toast.error('Select Product Size');
-          return;
-        }
-      
-        let cartData = structuredClone(cartItems);
-      
-        if (!cartData[itemId]) cartData[itemId] = {};
-        const key = size + (color ? `-${color}` : '');
-      
-        cartData[itemId][key] = (cartData[itemId][key] || 0) + quantity;
-        setCartItems(cartData);
-      
-        if (token) {
-          try {
-            await axios.post(backendUrl + '/api/cart/add', { itemId, size, color, quantity }, {
-                withCredentials: true, // ✅ Thêm dòng này
-              });
-          } catch (error) {
-            console.log(error);
-            toast.error(error.message);
-          }
-        }
+  const currency = '₫'; // Tiền Việt
+  const delivery_fee = 30000;
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const [search, setSearch] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [cartItems, setCartItems] = useState({});
+  const [products, setProducts] = useState([]);
+  const [token, setToken] = useState('');
+  const [userInfo, setUserInfo] = useState({});
+  const [wishlist, setWishlist] = useState([]);
+  const [promoCode, setPromoCode] = useState('');
+  const [promotion, setPromotion] = useState(null);
+  const [flashSaleItems, setFlashSaleItems] = useState([]);
+const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
+  const navigate = useNavigate();
+  const isInWishlist = (productId) => {
+    return wishlist.some(
+      (item) =>
+        item &&
+        (item.id === productId || item._id === productId)
+    );
+  };
+  
+  const loadFlashSale = async () => {
+    try {
+      const res = await axios.get('/api/flashsale/active');
+      if (res.data.success && Array.isArray(res.data.products) && res.data.endTime) {
+        setFlashSaleItems(res.data.products);
+        setFlashSaleEndTime(res.data.endTime);
       }
-
-    const getCartCount = () => {
-        let totalCount = 0;
-        for(const items in cartItems){
-            for(const item in cartItems[items]){
-                try {
-                    if (cartItems[items][item] > 0) {
-                        totalCount += cartItems[items][item];
-                    }
-                } catch (error) {
-                    console.log(error)
-                    toast.error(error.message)
-                }
-            }
-        }
-        return totalCount;
+    } catch (err) {
+      console.error("❌ Flash Sale Fetch Error:", err);
     }
-
-    const updateQuantity = async (itemId,size,quantity) => {
+  };
+  useEffect(() => {
+    loadFlashSale();
+  }, []);
+  // ✅ Đây là đúng cách gọi API từ frontend
+  const addToWishlist = async (productId) => {
+    try {
+      const token = localStorage.getItem('token');
+  
+      const response = await axios.post(
+        `${backendUrl}/api/user/wishlist/add`,
+        { productId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+  
+      if (response.data.success) {
+        toast.success('Added to wishlist');
         
-        let cartData = structuredClone(cartItems);
-
-        cartData[itemId][size] = quantity;
-
-        setCartItems(cartData);
-
-        if (token) {
-            try {
-                
-                await axios.post(backendUrl + '/api/cart/update', { itemId, size, quantity }, {
-                    withCredentials: true, // ✅ Thêm dòng này
-                  });
-                  
-
-            } catch (error) {
-                console.log(error);
-                toast.error(error.message)
-            }
-        }
+        // 🔁 GỌI LẠI từ server để cập nhật chính xác
+        await loadWishlist(); 
+      } else {
+        toast.info(response.data.message || 'Already in wishlist');
+      }
+    } catch (error) {
+      console.error("🔥 Wishlist API error:", error);
+      toast.error('Error adding to wishlist');
     }
-
-    const getCartAmount = () => {
-        let totalAmount = 0;
-        for(const items in cartItems){
-            let itemInfo = products.find((product)=> product._id === items);
-            if (!itemInfo) continue;
-            for(const item in cartItems[items]){
-                try {
-                    if (cartItems[items][item] > 0) {
-                        totalAmount += itemInfo.price * cartItems[items][item]
-                    }
-                } catch (error) {
-                    console.log(error)
-                    toast.error(error.message)
-                }
-            }
-        }
-        return totalAmount;
+  };
+  
+  const loadWishlist = async () => {
+    try {
+      const token = localStorage.getItem('token');
+  
+      if (!userInfo || !userInfo._id) {
+        console.warn('⛔ Không thể load wishlist vì userInfo chưa sẵn sàng');
+        return;
+      }
+  
+      const response = await axios.get(`${backendUrl}/api/user/${userInfo._id}/wishlist`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
+  
+      if (response.data.success) {
+        setWishlist(response.data.wishlist || []);
+      }
+    } catch (err) {
+      console.error('❌ Lỗi khi load wishlist:', err);
     }
+  };
+  
+  
+const removeFromWishlist = async (productId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.delete(`${backendUrl}/api/user/wishlist/${productId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      withCredentials: true,
+    });
 
-    const getProdcutsData = async () => {
-        try {
-            
-            const response = await axios.get(backendUrl + '/api/product/list') 
-            if (response.data.success) {
-                setProducts(response.data.products)
-            } else {
-                toast.error(response.data.message)
-            }
-        } catch (error) {
-            console.log(error);
-            toast.error(error.message)
-            
-        }
+    if (response.data.success) {
+      // ✅ Sửa chỗ này: item._id thay vì item.id
+      setWishlist((prev) => prev.filter((item) => item._id !== productId));
+      toast.success('Removed from wishlist');
+    } else {
+      toast.error(response.data.message || 'Failed to remove from wishlist');
     }
+  } catch (error) {
+    console.error("❌ Failed to remove from wishlist:", error);
+    toast.error('Error removing from wishlist');
+  }
+};
 
-    const getUserCart = async () => {
-        try {
-            const response = await axios.post(backendUrl + '/api/cart/get', {}, {
-                withCredentials: true, // ✅ THÊM
-            });
-            if (response.data.success) {
-                setCartItems(response.data.cartData)
-            }
-        } catch (error) {
-            console.log(error);
-            toast.error(error.message)
-        }
+
+  // 🟢 Load lại token + user info + cart sau reload
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      setToken(storedToken);
+      getUserInfo(storedToken);
+      getUserCart(storedToken);
     }
-
-    const addComment = (productId, user, content) => {
-        const newComment = {
-          productId,
-          user,
-          content,
-          date: new Date().toLocaleString()
-        };
-        setComments([...comments, newComment]);
-      };
-
-      const getUserData = async () =>{
-        try {
-            const {data} = await axios.get(backendUrl + '/api/auth/data', {
-              withCredentials: true, // 🔥 thêm luôn cho chắc ăn
-            })
-            data.success ? setUserData(data.userData) : toast.error(data.message)
-        } catch (error) {
-            toast.error(error.message)
-        }
+  }, []);
+  useEffect(() => {
+    if (token) {
+      getProdcutsData(); // ✅ Load lại sản phẩm có flash sale nếu có
     }
-    
+  }, [token]);
 
-    /*const getAuthState = async()=> {
-        try {
-            const {data} = await axios.get(backendUrl + 'api/user/is-auth')
-            if(data.success){
-                setIsLoggedin(true)
-                getUserData()
-            }
-        } catch (error) {
-            toast.error(error.message)
+  const getUserInfo = async (activeToken = token) => {
+    try {
+      const response = await axios.get('/api/user/profile', {
+        headers: {
+          Authorization: `Bearer ${activeToken}`,
+        },
+      });
+      
+  
+      setUserInfo(response.data.user); // Chỉ hoạt động nếu backend trả về { success: true, user }
+    } catch (error) {
+      console.error('❌ Error fetching profile:', error.response?.data || error.message);
+    }
+  };
+
+  const getUserCart = async (activeToken = token) => {
+    try {
+      if (!activeToken) return;
+
+      const response = await axios.post(
+        backendUrl + '/api/cart/get',
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${activeToken}`,
+          },
+          withCredentials: true,
         }
-    }*/
+      );
 
-    /*useEffect(()=>{
-        getAuthState();
-    },[])*/
+      if (response.data.success) {
+        setCartItems(response.data.cartData);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || 'Lỗi lấy giỏ hàng');
+    }
+  };
 
+  const getProdcutsData = async () => {
+    try {
+      const productRes = await axios.get(backendUrl + '/api/product/list');
+  
+      if (!productRes.data.success) {
+        toast.error(productRes.data.message || "Không lấy được sản phẩm");
+        return;
+      }
+  
+      const productsFromDB = productRes.data.products || [];
+  
+      // ❌ Không cần merge Flash Sale nữa vì đã có flashSaleItems riêng
+      const enriched = productsFromDB.map(p => ({
+        ...p,
+        isFlashSale: false,
+        discountPercent: 0,
+        priceBeforeSale: undefined,
+        price: p.price,
+      }));
+  
+      setProducts(enriched);
+    } catch (error) {
+      console.error('❌ Lỗi khi tải sản phẩm:', error);
+      toast.error(error.message || "Lỗi khi lấy sản phẩm");
+    }
+  };
+  
+  
+  
 
-    useEffect(()=>{
-        getProdcutsData()
-    },[])
+  useEffect(() => {
+    getProdcutsData();
+  }, []);
+  useEffect(() => {
+    if (userInfo && userInfo._id) {
+      loadWishlist(); // ✅ Gọi lại sau khi userInfo đã có _id
+    }
+  }, [userInfo]);
+  const addToCart = async (itemId, size, color) => {
+    if (!size) {
+      toast.error('Select Product Size');
+      return;
+    }
+  
+    const key = color ? `${size}-${color}` : size; // ✅ dùng key chuẩn
+    const cartData = structuredClone(cartItems);
+    cartData[itemId] = cartData[itemId] || {};
+    cartData[itemId][key] = (cartData[itemId][key] || 0) + 1;
+    setCartItems(cartData);
+  
+    if (token) {
+      try {
+        const res = await axios.post(
+          backendUrl + '/api/cart/add',
+          { itemId, size, color },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            withCredentials: true,
+          }
+        );
+        console.log('✅ Saved to DB:', res.data.cartData);
+      } catch (error) {
+        toast.error('Không thể lưu giỏ hàng');
+        console.error(error);
+      }
+    }
+  };
+  
+  
+  
 
-    useEffect(()=> {
-        if (!token && localStorage.getItem('token')) {
-            setToken(localStorage.getItem('token'))
-            
+  const updateQuantity = async (itemId, size, quantity, color, oldSize = size, oldColor = color) => {
+    if (!token) return;
+  
+    try {
+      const response = await axios.post(
+        backendUrl + '/api/cart/update',
+        { itemId, size, quantity, color, oldSize, oldColor },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
         }
-        getUserCart()
-    },[])
+      );
+  
+      if (response.data.success) {
+        setCartItems(response.data.cartData); // ✅ chỉ set lại khi backend đã xử lý xong
+      }
+    } catch (error) {
+      console.error('🔴 Update Cart Error:', error.response || error.message);
+      toast.error(error.response?.data?.message || 'Lỗi cập nhật giỏ hàng');
+    }
+  };
+  
+  
 
-    const value = {
-        products , currency, delivery_fee,
-        search,setSearch,showSearch,setShowSearch,
-        cartItems,addToCart, setCartItems,
-        getCartCount,updateQuantity,
-        getCartAmount, navigate, backendUrl,
-        setToken,token,
-        comments, addComment,
-        isLoggedin, setIsLoggedin,
-        userData, setUserData ,
-        getUserData 
-    }   
+  const getCartAmount = () => {
+    let totalAmount = 0;
+    for (const itemId in cartItems) {
+      const product = products.find((p) => p._id === itemId);
+      if (!product) continue;
 
-    return (
-        <ShopContext.Provider value={value}> 
-            {props.children}
-        </ShopContext.Provider>
-    )
+      for (const key in cartItems[itemId]) {
+        totalAmount += product.price * cartItems[itemId][key];
+      }
+    }
+    return totalAmount;
+  };
 
-}
+  const logout = () => {
+    setUserInfo(null);      // ✅ rõ ràng hơn khi chưa đăng nhập
+    setToken('');
+    setWishlist([]);        // ✅ xóa wishlist khỏi context
+    localStorage.removeItem('token');
+  };
+
+  const value = {
+    products,
+    currency,
+    delivery_fee,
+    search,
+    setSearch,
+    showSearch,
+    setShowSearch,
+    cartItems,
+    setCartItems,
+    addToCart,
+    updateQuantity,
+    getCartCount: () => Object.values(cartItems).reduce((sum, group) =>
+      sum + Object.values(group).reduce((s, q) => s + q, 0), 0),
+    getCartAmount,
+    navigate,
+    backendUrl,
+    setToken,
+    token,
+    userInfo,
+    getProdcutsData,
+    setUserInfo,
+    logout,
+    getUserInfo,
+    wishlist,
+    loadWishlist,
+    addToWishlist,
+    removeFromWishlist,
+    isInWishlist,
+    promoCode,
+    setPromoCode,
+    promotion,
+    setPromotion,
+    flashSaleItems,
+flashSaleEndTime,
+loadFlashSale,
+  };
+
+  return (
+    <ShopContext.Provider value={value}>
+      {props.children}
+    </ShopContext.Provider>
+  );
+};
 
 export default ShopContextProvider;
