@@ -4,8 +4,16 @@ import { backendUrl, currency } from '../App';
 import { toast } from 'react-toastify';
 import { assets } from '../assets/assets';
 import { DatePicker, Select, Button, Space } from 'antd';
+import { VND } from '../utils/handleCurrency';
 import dayjs from 'dayjs';
+import { FaBoxOpen, FaClipboardList, FaTruck, FaMotorcycle } from 'react-icons/fa'; 
 const { RangePicker } = DatePicker;
+const statusIcons = {
+  'Order Placed': <FaClipboardList className="text-lg" />,
+  'Packing': <FaBoxOpen className="text-lg" />,
+  'Shipped': <FaTruck className="text-lg" />,
+  'Out for delivery': <FaMotorcycle className="text-lg" />,
+};
 const Orders = ({ token }) => {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -15,6 +23,10 @@ const Orders = ({ token }) => {
   // filters
   const [filterDateRange, setFilterDateRange] = useState(null);
   const [filterStatus, setFilterStatus] = useState('All');
+  const orderCounts = orders.reduce((acc, order) => {
+    acc[order.status] = (acc[order.status] || 0) + 1;
+    return acc;
+  }, {});
   const fetchAllOrders = async () => {
     if (!token) return;
     try {
@@ -70,14 +82,13 @@ const Orders = ({ token }) => {
     }
   }, [selectedOrder]);
   const handlePrintOrder = (order) => {
-    const currency = '₫'; // hoặc VND.format() nếu bạn muốn dùng định dạng
-    const logoUrl = 'https://yourdomain.com/logo.png'; // đổi thành URL logo thật
-    const storeName = 'IRON PULSE - Fashion Store'; // tên cửa hàng
+    const logoUrl = 'https://yourdomain.com/logo.png'; // thay bằng logo thật
+    const storeName = 'IRON PULSE - Fashion Store';
   
-    const subTotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const shippingFee = order.shipping || 0;
-    const discount = order.discount || 0;
-    const total = subTotal + shippingFee - discount;
+    const subTotal = order.amount + (order.discountAmount || 0) - (order.shippingFee || 0);
+    const shippingFee = order.shippingFee || 0;
+    const discount = order.discountAmount || 0;
+    const total = order.amount;
   
     const content = `
       <html>
@@ -96,42 +107,52 @@ const Orders = ({ token }) => {
         <body>
           <img src="${logoUrl}" alt="Logo" class="logo" />
           <h1>${storeName}</h1>
-          <h2>Order Details</h2>
+          <h2>Chi tiết đơn hàng</h2>
   
-          <p><strong>Order ID:</strong> #${order._id.slice(-6).toUpperCase()}</p>
-          <p><strong>Name:</strong> ${order.address?.fristName} ${order.address?.lastName}</p>
-          <p><strong>Phone:</strong> (+84) ${order.address?.phone}</p>
-          <p><strong>Address:</strong> ${order.address?.street}, ${order.address?.city}, ${order.address?.state}, ${order.address?.country}, ${order.address?.zipcode}</p>
-          <p><strong>Date:</strong> ${new Date(order.date).toLocaleString()}</p>
-          <p><strong>Status:</strong> ${order.status}</p>
-          <p><strong>Payment:</strong> ${order.payment ? 'Done' : 'Pending'}</p>
-          <p><strong>Note:</strong> ${order.note || 'Không có ghi chú.'}</p>
+          <p><strong>Mã đơn:</strong> #${order._id.slice(-6).toUpperCase()}</p>
+          <p><strong>Tên khách:</strong> ${order.address?.firstName || ''} ${order.address?.lastName || ''}</p>
+          <p><strong>Số điện thoại:</strong> (+84) ${order.address?.phone}</p>
+          <p><strong>Địa chỉ:</strong> ${order.address?.street}, ${order.address?.city}, ${order.address?.state}, ${order.address?.country}, ${order.address?.zipcode}</p>
+          <p><strong>Ngày tạo:</strong> ${order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A'}</p>
+          <p><strong>Payment Method:</strong> ${
+  order.paymentMethod === 'COD'
+    ? `<img src="${assets.cod_icon}" alt="cod" style="width:16px;height:16px;vertical-align:middle;margin-right:5px;" /> Cash on Delivery`
+    : `<span style="color:green;font-weight:bold;">Paid Online</span>`
+}</p>
+
+
+          <p><strong>Ghi chú:</strong> ${order.note || 'Không có ghi chú.'}</p>
   
-          <h3>Items:</h3>
+          <h3>Danh sách sản phẩm:</h3>
           <table>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${order.items.map(item => `
-                <tr>
-                  <td>${item.name}</td>
-                  <td>${item.quantity}</td>
-                  <td>${currency} ${item.price.toLocaleString()}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Item Name</th>
+      <th>Category</th>
+      <th>Quantity</th>
+      <th>Price</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${order.items.map((item, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${item.name}</td>
+        <td>${item.category || 'N/A'}</td>
+        <td>${item.quantity}</td>
+        <td>${VND.format(item.price)}</td>
+      </tr>
+    `).join('')}
+  </tbody>
+</table>
+
   
           <div class="summary">
-            <p><strong>Subtotal:</strong> ${currency} ${subTotal.toLocaleString()}</p>
-            <p><strong>Discount:</strong> ${currency} ${discount.toLocaleString()}</p>
-            <p><strong>Shipping Fee:</strong> ${currency} ${shippingFee.toLocaleString()}</p>
-            <p><strong>Total:</strong> <strong>${currency} ${total.toLocaleString()}</strong></p>
+            <p><strong>Tạm tính:</strong> ${VND.format(subTotal)}</p>
+            <p><strong>Phí vận chuyển:</strong> ${VND.format(shippingFee)}</p>
+            <p><strong>Giảm giá:</strong> -${VND.format(discount)}</p>
+            <p><strong>Tổng cộng:</strong> <strong>${VND.format(total)}</strong></p>
           </div>
         </body>
       </html>
@@ -161,31 +182,40 @@ const Orders = ({ token }) => {
       <h3 className="text-xl font-semibold mb-4">Order Page</h3>
       
       {/* ✅ Bộ lọc trạng thái và ngày */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <div>
-          <label className="mr-2 font-medium">Filter by Status:</label>
-          <Select
-            defaultValue="All"
-            style={{ width: 180 }}
-            onChange={(value) => setFilterStatus(value)}
-            options={[
-              { value: 'All', label: 'All' },
-              { value: 'Order Placed', label: 'Order Placed' },
-              { value: 'Packing', label: 'Packing' },
-              { value: 'Shipped', label: 'Shipped' },
-              { value: 'Out for delivery', label: 'Out for delivery' },
-              { value: 'Delivered', label: 'Delivered' },
-            ]}
-          />
-        </div>
-        <div>
-          <label className="mr-2 font-medium">Filter by Date:</label>
-          <RangePicker
-            onChange={(dates) => setFilterDateRange(dates)}
-            allowClear
-          />
-        </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+  {/* Cards lọc theo trạng thái */}
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+  {['Order Placed', 'Packing', 'Shipped', 'Out for delivery'].map((status) => (
+    <div
+      key={status}
+      onClick={() => setFilterStatus(status)}
+      className={`min-h-[100px] p-4 rounded-xl cursor-pointer transition-all shadow-md border-2 hover:shadow-lg flex flex-col items-center justify-center text-center gap-1 ${
+        filterStatus === status
+          ? 'border-blue-500 bg-blue-50'
+          : 'border-gray-200 bg-white'
+      }`}
+    >
+      <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-700">
+        {statusIcons[status]} <span>{status}</span>
       </div>
+      <div className="text-2xl font-bold text-blue-600">
+        {orderCounts[status] || 0}
+      </div>
+    </div>
+  ))}
+</div>
+
+  {/* Lọc theo ngày */}
+  <div className="w-full md:w-auto">
+    <label className="mr-2 font-medium">📅 Filter by Date:</label>
+    <RangePicker
+      onChange={(dates) => setFilterDateRange(dates)}
+      allowClear
+      className="shadow-sm rounded border-gray-300"
+    />
+  </div>
+</div>
+
 
       {/* Danh sách đơn hàng */}
       {filteredOrders.length === 0 ? (
@@ -230,7 +260,7 @@ const Orders = ({ token }) => {
                 </td>
                 <td className='px-4 py-2'>{order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A'}</td>
                 <td className='px-4 py-2'>{order.items?.reduce((total, item) => total + item.quantity, 0)}</td>
-                <td className='px-4 py-2'>{currency} {order.amount}</td>
+                <td className='px-4 py-2'>{VND.format(order.amount)}</td>
                 <td className='px-4 py-2'>
                   <span
                     className={`px-2 py-1 rounded text-white ${
@@ -467,7 +497,7 @@ const Orders = ({ token }) => {
       <td className='px-2 py-1'>{item.name}</td>
       <td className='px-2 py-1'>{item.category || 'N/A'}</td>
       <td className='px-2 py-1'>{item.quantity}</td>
-      <td className='px-2 py-1'>{currency} {item.price}</td>
+      <td className='px-2 py-1'>{VND.format(item.price)}</td>
     </tr>
   ))}
 </tbody>
@@ -479,10 +509,16 @@ const Orders = ({ token }) => {
               {/* Summary */}
               <div className='flex flex-col text-right space-y-1'>
               
-              <p><strong>Subtotal:</strong> {currency} {selectedOrder.subtotal ?? 0}</p>
-<p><strong>Discount:</strong> {currency} {selectedOrder.discount ?? 0}</p>
-<p><strong>Shipping Fee:</strong> {currency} {selectedOrder.shippingFee ?? 0}</p>
-<p><strong>Total Amount:</strong> {currency} {selectedOrder.amount ?? 0}</p>
+              <p><strong>Tạm tính:</strong> {VND.format(selectedOrder.amount + (selectedOrder.discountAmount || 0) - (selectedOrder.shippingFee || 0))}</p>
+<p><strong>Phí vận chuyển:</strong> {VND.format(selectedOrder.shippingFee || 0)}</p>
+<p>
+  {selectedOrder.promotionCode && (
+    <span className="text-gray-500">(Mã: {selectedOrder.promotionCode}) </span>
+  )}
+  <strong>Giảm giá:</strong>{' '}
+  -{VND.format(selectedOrder.discountAmount || 0)}
+</p>
+<p><strong>Tổng cộng:</strong> <strong>{VND.format(selectedOrder.amount)}</strong></p>
                 
 
 

@@ -30,6 +30,9 @@ const orderSchema = new mongoose.Schema({
       message: 'Address is incomplete' 
     }
   },
+  promotionCode: { type: String },
+  discountAmount: { type: Number, required: true, default: 0 },
+  shippingFee: { type: Number, required: true, default: 0 },
   status: { type: String, required: true, default: 'Order Placed' },
   paymentMethod: { type: String, required: true },
   note: { type: String, default: '' },

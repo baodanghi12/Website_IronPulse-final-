@@ -14,7 +14,7 @@ const ShopContextProvider = (props) => {
   const [showSearch, setShowSearch] = useState(false);
   const [cartItems, setCartItems] = useState({});
   const [products, setProducts] = useState([]);
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [userInfo, setUserInfo] = useState({});
   const [wishlist, setWishlist] = useState([]);
   const [promoCode, setPromoCode] = useState('');
@@ -44,17 +44,27 @@ const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
   useEffect(() => {
     loadFlashSale();
   }, []);
+  useEffect(() => {
+    if (!token) {
+      localStorage.setItem('guestCart', JSON.stringify(cartItems));
+    }
+  }, [cartItems, token]);
+  
   // ✅ Đây là đúng cách gọi API từ frontend
   const addToWishlist = async (productId) => {
-    try {
-      const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Bạn cần đăng nhập để thêm vào wishlist');
+      navigate('/login');
+      return;
+    }
   
+    try {
       const response = await axios.post(
         `${backendUrl}/api/user/wishlist/add`,
         { productId },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`, // ✅ Dùng token trong state
           },
           withCredentials: true,
         }
@@ -62,8 +72,6 @@ const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
   
       if (response.data.success) {
         toast.success('Added to wishlist');
-        
-        // 🔁 GỌI LẠI từ server để cập nhật chính xác
         await loadWishlist(); 
       } else {
         toast.info(response.data.message || 'Already in wishlist');
@@ -75,14 +83,9 @@ const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
   };
   
   const loadWishlist = async () => {
+    if (!token || !userInfo?._id) return;
+  
     try {
-      const token = localStorage.getItem('token');
-  
-      if (!userInfo || !userInfo._id) {
-        console.warn('⛔ Không thể load wishlist vì userInfo chưa sẵn sàng');
-        return;
-      }
-  
       const response = await axios.get(`${backendUrl}/api/user/${userInfo._id}/wishlist`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -99,39 +102,42 @@ const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
   };
   
   
-const removeFromWishlist = async (productId) => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await axios.delete(`${backendUrl}/api/user/wishlist/${productId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      withCredentials: true,
-    });
-
-    if (response.data.success) {
-      // ✅ Sửa chỗ này: item._id thay vì item.id
-      setWishlist((prev) => prev.filter((item) => item._id !== productId));
-      toast.success('Removed from wishlist');
-    } else {
-      toast.error(response.data.message || 'Failed to remove from wishlist');
+  const removeFromWishlist = async (productId) => {
+    if (!token) return;
+  
+    try {
+      const response = await axios.delete(`${backendUrl}/api/user/wishlist/${productId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
+  
+      if (response.data.success) {
+        setWishlist((prev) => prev.filter((item) => item._id !== productId));
+        toast.success('Removed from wishlist');
+      } else {
+        toast.error(response.data.message || 'Failed to remove from wishlist');
+      }
+    } catch (error) {
+      console.error("❌ Failed to remove from wishlist:", error);
+      toast.error('Error removing from wishlist');
     }
-  } catch (error) {
-    console.error("❌ Failed to remove from wishlist:", error);
-    toast.error('Error removing from wishlist');
-  }
-};
+  };
+  
 
 
   // 🟢 Load lại token + user info + cart sau reload
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      setToken(storedToken);
-      getUserInfo(storedToken);
-      getUserCart(storedToken);
+    if (token) {
+      getUserInfo(token);
+      getUserCart(token);
+      getProdcutsData();
+    } else {
+      setCartItems({});
+      setWishlist([]);
     }
-  }, []);
+  }, [token]);
   useEffect(() => {
     if (token) {
       getProdcutsData(); // ✅ Load lại sản phẩm có flash sale nếu có
@@ -156,7 +162,7 @@ const removeFromWishlist = async (productId) => {
   const getUserCart = async (activeToken = token) => {
     try {
       if (!activeToken) return;
-
+  
       const response = await axios.post(
         backendUrl + '/api/cart/get',
         {},
@@ -167,15 +173,39 @@ const removeFromWishlist = async (productId) => {
           withCredentials: true,
         }
       );
-
+  
       if (response.data.success) {
-        setCartItems(response.data.cartData);
+        const dbCart = response.data.cartData || {};
+        const guestCart = JSON.parse(localStorage.getItem('guestCart') || '{}');
+  
+        // 🔀 Merge guestCart và dbCart
+        const mergedCart = { ...dbCart };
+        for (const itemId in guestCart) {
+          if (!mergedCart[itemId]) mergedCart[itemId] = {};
+          for (const key in guestCart[itemId]) {
+            mergedCart[itemId][key] = (mergedCart[itemId][key] || 0) + guestCart[itemId][key];
+          }
+        }
+  
+        // 🧠 Gửi mergedCart lên server để lưu lại
+        await axios.post(
+          backendUrl + '/api/cart/update',
+          { cartData: mergedCart },
+          {
+            headers: { Authorization: `Bearer ${activeToken}` },
+            withCredentials: true,
+          }
+        );
+  
+        setCartItems(mergedCart);
+        localStorage.removeItem('guestCart'); // ✅ Xóa cart tạm sau khi đã merge
       }
     } catch (error) {
       console.log(error);
       toast.error(error.response?.data?.message || 'Lỗi lấy giỏ hàng');
     }
   };
+  
 
   const getProdcutsData = async () => {
     try {
@@ -288,12 +318,13 @@ const removeFromWishlist = async (productId) => {
     }
     return totalAmount;
   };
-
   const logout = () => {
-    setUserInfo(null);      // ✅ rõ ràng hơn khi chưa đăng nhập
+    setUserInfo(null);
     setToken('');
-    setWishlist([]);        // ✅ xóa wishlist khỏi context
+    setWishlist([]);
+    setCartItems({}); // 🛒 XÓA GIỎ HÀNG
     localStorage.removeItem('token');
+    navigate('/'); // 👉 Nếu muốn điều hướng sau khi logout
   };
 
   const value = {

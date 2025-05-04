@@ -16,43 +16,19 @@ const Orders = () => {
   const [selectedOrderItem, setSelectedOrderItem] = useState(null);
   const [supportMessage, setSupportMessage] = useState('');
 
+  const ORDER_STEPS = ['Order Placed', 'Packing', 'Shipped', 'Out for delivery', 'Delivered'];
+
   const loadOrderData = async () => {
     try {
       if (!token) return;
-
-      const response = await axios.post(`${backendUrl}/api/order/userorders`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await axios.post(`${backendUrl}/api/order/userorders`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (response.data.success) {
-        const allOrdersItems = [];
-
-        response.data.orders.forEach((order) => {
-          order.items.forEach((item) => {
-            const matchedProduct = products.find((p) => p._id === item.productId);
-
-            const enrichedItem = {
-              ...item,
-              orderId: order._id,
-              image: Array.isArray(matchedProduct?.image)
-                ? matchedProduct.image
-                : typeof matchedProduct?.image === 'string'
-                ? [matchedProduct.image]
-                : [],
-              status: order.status,
-              payment: order.payment,
-              paymentMethod: order.paymentMethod,
-              date: order.createdAt || order.date,
-            };
-
-            allOrdersItems.push(enrichedItem);
-          });
-        });
-
-        setOrderData(allOrdersItems.reverse());
+      if (res.data.success) {
+        setOrderData(res.data.orders.reverse());
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       toast.error('Lỗi tải đơn hàng');
     }
   };
@@ -62,135 +38,150 @@ const Orders = () => {
   }, [token]);
 
   const submitReview = async ({ orderId, productId, rating, comment }) => {
-    const base = backendUrl || 'http://localhost:4000';
     try {
-      const res = await axios.post(
-        `${base}/api/order/${orderId}/review`,
+      const res = await axios.post(`${backendUrl}/api/order/${orderId}/review`,
         { productId, rating, comment },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
-        toast.success('Review submitted!');
+        toast.success('Đánh giá đã được gửi!');
         loadOrderData();
       } else {
         toast.error(res.data.message);
       }
     } catch (err) {
-      console.error('❌ Review API Error:', err);
+      console.error(err);
       toast.error(err.message || 'Gửi đánh giá thất bại');
     }
   };
 
   const submitSupportRequest = async () => {
     try {
-      const res = await axios.post(`${backendUrl}/api/support-request`, {
-        productId: selectedOrderItem.productId,
-        message: supportMessage,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const res = await axios.post(`${backendUrl}/api/support-request`,
+        {
+          productId: selectedOrderItem.productId,
+          message: supportMessage,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       if (res.data.success) {
         setShowSupportModal(false);
         setSupportMessage('');
-        toast.success('Yêu cầu của bạn đã được gửi!');
+        toast.success('Yêu cầu hỗ trợ đã được gửi!');
       } else {
-        toast.error('Không thể gửi yêu cầu.');
+        toast.error('Không thể gửi yêu cầu hỗ trợ.');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Có lỗi xảy ra khi gửi yêu cầu.');
+      toast.error('Lỗi khi gửi yêu cầu hỗ trợ.');
     }
   };
 
   return (
-    <div className="border-t pt-16">
-      <div className="text-2xl">
+    <div className="border-t pt-16 px-4 sm:px-8 max-w-5xl mx-auto">
+      <div className="text-2xl mb-6">
         <Title text1={'MY'} text2={'ORDERS'} />
       </div>
 
-      <div>
-        {orderData.map((item, index) => (
-          <div
-            key={index}
-            className="py-4 border-t border-b text-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-          >
-            <div className="flex items-start gap-6 text-sm">
-              <img
-                className="w-16 sm:w-20"
-                src={
-                  Array.isArray(item.image)
-                    ? item.image[0]
-                    : typeof item.image === 'string'
-                    ? item.image
-                    : ''
-                }
-                alt=""
-              />
-              <div>
-                <p className="sm:text-base font-medium">{item.name}</p>
-                <div className="flex items-center gap-3 mt-1 text-base text-gray-700">
-                  <p>{currency}{item.price}</p>
-                  <p>Quantity: {item.quantity}</p>
-                  <p>Size: {item.size}</p>
-                </div>
-                <p className="mt-1 text-gray-400">
-                  Date: {new Date(item.date).toDateString()}
-                </p>
-                <p className="mt-1 text-gray-400">
-                  Payment: {item.paymentMethod}
-                </p>
+      <div className="space-y-8">
+        {orderData.map((order, index) => {
+          const statusIndex = ORDER_STEPS.findIndex(step => step === order.status);
 
-                {item.review ? (
-                  <div className="mt-2 text-sm text-gray-600">
-                    <p>⭐ {item.review.rating} - {item.review.comment}</p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(item.review.createdAt).toLocaleDateString()}
-                    </p>
+          return (
+            <div key={index} className="bg-white rounded-xl shadow border p-6">
+              {/* Status progress bar center aligned */}
+              <div className="mb-6">
+                <div className="flex justify-center">
+                  <div className="flex items-center w-full max-w-2xl">
+                    {ORDER_STEPS.map((step, i) => (
+                      <div key={i} className="flex-1 flex items-center">
+                        <div className={`w-4 h-4 rounded-full z-10 ${i <= statusIndex ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                        {i < ORDER_STEPS.length - 1 && (
+                          <div className={`flex-1 h-1 ${i < statusIndex ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ) : (
-                  item.status?.toLowerCase() === 'delivered' && (
-                    <div className="flex gap-3 mt-2">
-                      <button
-                        className="text-blue-600 text-sm underline"
-                        onClick={() => {
-                          setSelectedReviewItem(item);
-                          setShowReviewModal(true);
-                        }}
-                      >
-                        Đánh giá
-                      </button>
-                      <button
-                        className="text-gray-700 text-sm underline"
-                        onClick={() => {
-                          setSelectedOrderItem(item);
-                          setShowSupportModal(true);
-                        }}
-                      >
-                        Yêu cầu hỗ trợ
-                      </button>
-                    </div>
-                  )
-                )}
+                </div>
+                <div className="flex justify-center gap-2 text-xs text-gray-600 mt-1">
+                  {ORDER_STEPS.map((step, i) => (
+                    <span key={i} className={`${i === statusIndex ? 'text-green-700 font-semibold' : ''}`}>{step}</span>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="md:w-1/2 flex justify-between">
-              <div className="flex items-center gap-2">
-                <p className="min-w-2 h-2 rounded-full bg-green-500"></p>
-                <p className="text-sm md:text-base">{item.status}</p>
+              <div className="text-right text-sm text-gray-600 mb-2">
+                {new Date(order.createdAt).toLocaleString('vi-VN', {
+                  hour: '2-digit', minute: '2-digit', second: '2-digit',
+                  day: '2-digit', month: '2-digit', year: 'numeric'
+                })}
               </div>
-              <button
-                onClick={loadOrderData}
-                className="border px-4 py-2 text-sm font-medium rounded-sm"
-              >
-                Track Order
-              </button>
+
+              <div className="space-y-4 border-t pt-4">
+                {order.items.map((item, idx) => {
+                  const matchedProduct = products.find(p => p._id === item.productId);
+                  const image = Array.isArray(matchedProduct?.image)
+                    ? matchedProduct.image[0]
+                    : typeof matchedProduct?.image === 'string'
+                    ? matchedProduct.image
+                    : null;
+
+                  return (
+                    <div key={idx} className="flex items-center gap-4">
+                      {image ? (
+                        <img
+                          src={image}
+                          className="w-20 h-20 object-cover rounded border"
+                          alt={item.name}
+                        />
+                      ) : (
+                        <div className="w-20 h-20 flex items-center justify-center bg-gray-100 border rounded text-gray-400 text-xs">
+                          No Image
+                        </div>
+                      )}
+                      <div className="flex-1 text-sm text-gray-800">
+                        <div className="mb-1">
+                          <span className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded">
+                            #{order._id.slice(-6)}
+                          </span>
+                        </div>
+                        <p className="font-medium text-base">{item.name}</p>
+                        <p className="text-sm">Quantity: {item.quantity} | Size: {item.size}</p>
+                        {item.review ? (
+                          <div className="text-gray-500 mt-1 text-sm">
+                            <p>⭐ {item.review.rating} - {item.review.comment}</p>
+                            <p className="text-xs">{new Date(item.review.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        ) : order.status.toLowerCase() === 'delivered' && (
+                          <div className="flex gap-3 mt-2">
+                            <button
+                              onClick={() => {
+                                setSelectedReviewItem({ ...item, orderId: order._id });
+                                setShowReviewModal(true);
+                              }}
+                              className="text-blue-600 text-sm underline"
+                            >Đánh giá</button>
+                            <button
+                              onClick={() => {
+                                setSelectedOrderItem(item);
+                                setShowSupportModal(true);
+                              }}
+                              className="text-gray-600 text-sm underline"
+                            >Yêu cầu hỗ trợ</button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right text-sm text-gray-700 min-w-[120px]">
+                        <p><span className="font-semibold">Total:</span> {currency}{order.amount}</p>
+                        <p><span className="font-semibold">Payment:</span> {order.paymentMethod}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <Modal

@@ -14,7 +14,8 @@ const List = ({ token }) => {
   const [editProduct, setEditProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
-  
+  const [allProducts, setAllProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [inventoryStats, setInventoryStats] = useState({
     totalCategories: 0,
     totalProducts: 0,
@@ -32,16 +33,17 @@ const List = ({ token }) => {
       const response = await axios.get(backendUrl + "/api/product/list");
       if (response.data.success) {
         const products = response.data.products;
+        console.log("📦 First product:", products[0]);
         setList(products);
   
         // ✅ Tính toán Inventory Overview
         const categories = [...new Set(products.map(p => p.category))];
         const totalProducts = products.length;
         const totalRevenue = products.reduce((sum, p) => sum + (p.price || 0), 0);
-        const topSelling = products.filter(p => p.bestseller).length;
-        const topSellingRevenue = products
-          .filter(p => p.bestseller)
-          .reduce((sum, p) => sum + (p.price || 0), 0);
+        const topSelling = products.filter(p => p.totalSold > 5).length; // từ 5 lượt bán trở lên thì gọi là bán chạy
+const topSellingRevenue = products
+  .filter(p => p.totalSold > 5)
+  .reduce((sum, p) => sum + (p.price || 0), 0);
         const lowStocks = products.filter(p =>
           p.sizes?.some(size => size.quantity > 0 && size.quantity <= 5)
         ).length;
@@ -67,7 +69,19 @@ const List = ({ token }) => {
     }
   };
   
+  const sortByTopSelling = () => {
+    const sorted = [...list].sort((a, b) => (b.totalSold || 0) - (a.totalSold || 0));
+    setList(sorted);
+  };
   
+  const sortByLowStock = () => {
+    const sorted = [...list].sort((a, b) => {
+      const totalA = a.sizes?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0;
+      const totalB = b.sizes?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0;
+      return totalA - totalB;
+    });
+    setList(sorted);
+  };
 
   const removeProduct = async (id) => {
     try {
@@ -115,6 +129,7 @@ const List = ({ token }) => {
     const matchSubCategory = selectedSubCategory ? item.subCategory === selectedSubCategory : true;
     return matchSearch && matchCategory && matchSubCategory;
   });
+  
   
   // Nếu sortBy=lowStock thì sắp xếp số lượng tăng dần
   if (sortBy === 'lowStock') {
@@ -183,29 +198,33 @@ const List = ({ token }) => {
     <div className="flex flex-col items-center text-center">
       <p className="text-2xl font-bold text-blue-600">{inventoryStats.totalCategories}</p>
       <p className="mt-1 text-gray-700 font-medium">Categories</p>
-      <p className="mt-1 text-xs text-gray-400">Last 7 days</p>
     </div>
 
     {/* Total Products */}
     <div className="flex flex-col items-center text-center">
       <p className="text-2xl font-bold text-orange-500">{inventoryStats.totalProducts}</p>
       <p className="mt-1 text-gray-700 font-medium">Total Products</p>
-      <p className="mt-1 text-xs text-gray-400">{VND.format(inventoryStats.totalRevenue)} Revenue</p>
     </div>
 
     {/* Top Selling */}
-    <div className="flex flex-col items-center text-center">
-      <p className="text-2xl font-bold text-purple-500">{inventoryStats.topSelling}</p>
-      <p className="mt-1 text-gray-700 font-medium">Top Selling</p>
-      <p className="mt-1 text-xs text-gray-400">{VND.format(inventoryStats.topSellingRevenue)} Cost</p>
-    </div>
+<div
+  className="flex flex-col items-center text-center cursor-pointer"
+  onClick={sortByTopSelling}
+  title="Click to sort by top selling"
+>
+  <p className="text-2xl font-bold text-purple-500">{inventoryStats.topSelling}</p>
+  <p className="mt-1 text-gray-700 font-medium">Top Selling</p>
+</div>
 
-    {/* Low Stocks */}
-    <div className="flex flex-col items-center text-center">
-      <p className="text-2xl font-bold text-red-500">{inventoryStats.lowStocks}</p>
-      <p className="mt-1 text-gray-700 font-medium">Low Stocks</p>
-      <p className="mt-1 text-xs text-gray-400">{inventoryStats.outOfStocks} Not in stock</p>
-    </div>
+{/* Low Stocks */}
+<div
+  className="flex flex-col items-center text-center cursor-pointer"
+  onClick={sortByLowStock}
+  title="Click to sort by low stock"
+>
+  <p className="text-2xl font-bold text-red-500">{inventoryStats.lowStocks}</p>
+  <p className="mt-1 text-gray-700 font-medium">Low Stocks</p>
+</div>
 
   </div>
 </div>

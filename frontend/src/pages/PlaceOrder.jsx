@@ -103,10 +103,11 @@ const PlaceOrder = () => {
           country: formData.country
         },
         items: orderItems,
-        amount: getCartAmount() + delivery_fee - discount,
-        discountAmount: discount,
-        couponCode: couponCode,
+        promotionCode: couponCode // 👈 giữ lại dòng này
+        // ❌ Không gửi discountAmount, amount, subTotal, shippingFee nữa
       };
+      
+      
   
       switch (method) {
         case "cod":

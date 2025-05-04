@@ -186,6 +186,26 @@ const ReportScreen = () => {
       title: 'Product Name',
       dataIndex: 'productName',
       key: 'productName',
+      render: (name, record) => (
+        <span>
+          {name}{' '}
+          {record.color && (
+            <span
+              style={{
+                display: 'inline-block',
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                backgroundColor: record.color,
+                marginLeft: '6px',
+                border: '1px solid #ccc',
+                verticalAlign: 'middle'
+              }}
+              title={record.color}
+            />
+          )}
+        </span>
+      ),
     },
     {
       title: 'Product ID',

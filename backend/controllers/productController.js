@@ -75,18 +75,43 @@ const addProduct = async (req, res) => {
 
 
 // function for list products
-const listProducts =async (req, res) => {
-    try {
-        
-        const products = await productModel.find({})
-        res.json({success: true, products})
+const listProducts = async (req, res) => {
+  try {
+    // Lấy danh sách sản phẩm
+    const products = await productModel.find({});
 
-    } catch (error) {
-        console.log(error)
-        res.json({success: false, message: error.message})
-    }
-}
+    // Lấy tất cả đơn hàng (chỉ cần field items)
+    const orders = await Order.find().select('items');
 
+    // Tính tổng lượt bán cho từng productId
+    const productSalesMap = {}; // { productId: totalSold }
+
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        const id = item.productId;
+        if (!id) return;
+        if (!productSalesMap[id]) productSalesMap[id] = 0;
+        productSalesMap[id] += item.quantity;
+      });
+    });
+
+    // Gắn trường totalSold vào từng sản phẩm
+    const enrichedProducts = products.map(product => {
+      const totalSold = productSalesMap[product._id.toString()] || 0;
+      return {
+        ...product._doc,
+        totalSold,
+      };
+    });
+
+    // Trả kết quả
+    res.json({ success: true, products: enrichedProducts });
+
+  } catch (error) {
+    console.error("❌ listProducts error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 // function for remove product
 const removeProduct =async (req, res) => {
     try {
@@ -208,7 +233,7 @@ const editProduct = async (req, res) => {
         }
 
         // DEBUG: Kiểm tra dữ liệu gửi lên
-        console.log("Update data for product:", productId);
+        
         console.log(updateData);
 
         // Nếu không có gì để cập nhật, trả về lỗi
@@ -309,20 +334,20 @@ const lowQuantityProducts = async (req, res) => {
         
         {
           $addFields: {
-            "items._id": {
+            "items.productId": {
               $cond: {
-                if: { $eq: [{ $type: "$items._id" }, "string"] },
-                then: { $toObjectId: "$items._id" },
-                else: "$items._id"
+                if: { $eq: [{ $type: "$items.productId" }, "string"] },
+                then: { $toObjectId: "$items.productId" },
+                else: "$items.productId"
               }
             }
           }
         },
         {
           $group: {
-            _id: "$items._id",
+            _id: "$items.productId",
             totalSold: { $sum: "$items.quantity" },
-          },
+          }
         },
         {
           $lookup: {
@@ -330,8 +355,9 @@ const lowQuantityProducts = async (req, res) => {
             localField: "_id",
             foreignField: "_id",
             as: "product",
-          },
+          }
         },
+        
         { $unwind: "$product" },
         {
           $project: {
@@ -339,6 +365,9 @@ const lowQuantityProducts = async (req, res) => {
             name: "$product.name",
             price: "$product.price",
             image: "$product.image",
+            sizes: "$product.sizes", // ✅ thêm dòng này
+            colors: "$product.colors",
+    countInStock: "$product.countInStock", // ✅ (tùy bạn có dùng hay không)
             totalSold: 1,
           },
         },

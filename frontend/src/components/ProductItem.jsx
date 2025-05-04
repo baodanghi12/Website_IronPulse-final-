@@ -11,6 +11,7 @@ const ProductItem = ({
   priceBeforeSale,
   discountPercent,
   isFlashSale,
+  newArrival, 
 }) => {
   const { currency, addToWishlist, removeFromWishlist, isInWishlist, flashSaleItems } = useContext(ShopContext);
 
@@ -47,6 +48,11 @@ const ProductItem = ({
   return (
     <Link to={`/product/${id}`} className="text-gray-700 cursor-pointer block relative">
       <div className="relative overflow-hidden">
+      {newArrival && (
+  <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] px-1 py-0.5 font-bold rounded-br">
+    NEW
+  </div>
+)}
         <img
           src={image?.[0] || image}
           alt={name}

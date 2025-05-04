@@ -31,12 +31,12 @@ const FlashSaleList = ({ allProducts, token, onSuccess }) => {
   
         if (Array.isArray(products)) {
           const productsInSale = products.map(item => {
-            const p = item; // chính item là product đầy đủ do đã populate
-            const totalQty = p.sizes?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0;
-  
+            const totalQty = item.sizes?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0;
+          
             return {
-              ...p,
-              salePrice: item.price,               // ✅ giá sale từ API
+              ...item,
+              originalPrice: item.priceBeforeSale, // ✅ lấy từ field backend đã enrich
+              salePrice: item.price,               // ✅ chính là salePrice
               discountPercent: item.discountPercent,
               totalQty,
             };
@@ -154,8 +154,13 @@ const FlashSaleList = ({ allProducts, token, onSuccess }) => {
             <div key={index} className="min-w-[220px] border p-3 rounded shadow-sm bg-gray-50 relative">
               <img src={item.image[0]} alt={item.name} className="w-full h-28 object-cover rounded mb-2" />
               <p className="text-sm font-medium truncate">{item.name}</p>
-              <p className="text-sm text-gray-400 line-through">{VND.format(item.price)}</p>
-              <p className="text-red-600 font-bold">{VND.format(item.salePrice)}</p>
+              <p className="text-sm text-gray-400 line-through">
+  {VND.format(item.originalPrice)}
+</p>
+<p className="text-red-600 font-bold">
+  {VND.format(item.salePrice)}
+</p>
+
               {item.discountPercent && (
                 <p className="text-xs text-green-600 mt-1 font-semibold">
                   Giảm {item.discountPercent}%

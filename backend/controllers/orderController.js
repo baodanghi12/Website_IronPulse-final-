@@ -3,6 +3,8 @@ import userModel from "../models/userModel.js"
 import Stripe from "stripe"
 import Order from '../models/orderModel.js';
 import BillModel from '../models/BillModel.js'; 
+import productModel from "../models/productModel.js";
+import promotionModel from "../models/promotionModel.js"
 import mongoose from 'mongoose';
 // global variables
 const currency = "inr" // currency for stripe payment
@@ -11,68 +13,115 @@ const deliveryCharges = 10 // delivery charges for stripe payment
 // gateway initialization
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
-// Placing orders using COD Method
 const placeOrder = async (req, res) => {
-  
-    try {
-      const { items, amount, address,  phone } = req.body;
-      const {
+  try {
+    const { items, address, phone } = req.body;
+    const {
+      firstName, lastName, street, city, state, zipcode, country
+    } = address || {};
+    const userId = req.userId;
+
+    const enrichedItems = items.map(item => ({
+      ...item,
+      productId: item._id
+    }));
+
+    const subTotal = enrichedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shippingFee = 30000;
+    
+    // ✅ Kiểm tra mã trước khi tính finalAmount
+    let discountAmount = 0;
+    let promotionCode = req.body.promotionCode || req.body.couponCode || null;
+
+    if (promotionCode) {
+      const promotion = await promotionModel.findOne({ code: promotionCode });
+
+      if (promotion && promotion.isActive && promotion.numOfAvailable > 0) {
+        if (promotion.type === 'percent') {
+          discountAmount = Math.round((subTotal * promotion.value) / 100);
+        } else if (promotion.type === 'fixed') {
+          discountAmount = promotion.value;
+        }
+
+        // ✅ Trừ số lượt dùng
+        await promotionModel.updateOne({ _id: promotion._id }, { $inc: { numOfAvailable: -1 } });
+        console.log(`🔖 Promotion "${promotionCode}" used. Discount: ${discountAmount}`);
+      } else {
+        promotionCode = null; // Không hợp lệ thì không lưu
+        console.warn(`⚠️ Promotion "${promotionCode}" not found or expired.`);
+      }
+    }
+
+    const finalAmount = subTotal + shippingFee - discountAmount;
+
+    const orderData = {
+      userId,
+      items: enrichedItems,
+      address: {
         firstName,
         lastName,
+        phone,
         street,
         city,
         state,
         zipcode,
         country
-      } = address || {};
-      const userId = req.userId;
-      
-      const enrichedItems = items.map(item => ({
-        ...item,
-        productId: item._id // 👈 gán ID gốc của sản phẩm
-      }));
-      
-      const orderData = {
-        userId,
-        items: enrichedItems,
-        address: {
-          firstName,
-          lastName,
-          phone,
-          street,
-          city,
-          state,
-          zipcode,
-          country
-        },
-        amount,
-        paymentMethod: "COD",
-        payment: false,
-        date: Date.now()
-      };
-  
-      const newOrder = new orderModel(orderData);
-      await newOrder.save();
-  
-      await userModel.findByIdAndUpdate(userId, {
-        cartData: {},
-        shippingAddress: address, // ✅ lưu địa chỉ
-        phone: phone,
+      },
+      discountAmount,
+      shippingFee,
+      amount: finalAmount,
+      promotionCode,
+      paymentMethod: "COD",
+      payment: false,
+      date: Date.now()
+    };
+
+    const newOrder = new orderModel(orderData);
+    await newOrder.save();
+
+    // ✅ Cập nhật tồn kho
+    for (const item of enrichedItems) {
+      const product = await productModel.findById(item.productId);
+      if (!product) continue;
+
+      const extractedSize = item.size?.split('-')[0];
+      const updatedSizes = product.sizes.map((sizeObj) => {
+        if (sizeObj.size.trim() === extractedSize) {
+          return {
+            ...sizeObj,
+            quantity: Math.max(0, sizeObj.quantity - item.quantity),
+          };
+        }
+        return sizeObj;
       });
-      
-  
-      res.json({ success: true, message: "Order Placed" });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ success: false, message: error.message });
+
+      product.sizes = updatedSizes;
+      product.markModified('sizes');
+      await product.save();
     }
-  };
+
+    // ✅ Xóa giỏ hàng
+    await userModel.findByIdAndUpdate(userId, {
+      cartData: {},
+      shippingAddress: address,
+      phone
+    });
+
+    res.json({ success: true, message: "Order Placed" });
+
+  } catch (error) {
+    console.error("❌ Error placing order:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
 
 // Placing orders using Stripe Method
 const placeOrderStripe = async (req,res) => {
     try {
-        
-        const { userId, items, amount, address} = req.body;
+        const userId = req.userId;
+        const {  items, amount, address} = req.body;
         const { origin } = req.headers
 
         const orderData = {

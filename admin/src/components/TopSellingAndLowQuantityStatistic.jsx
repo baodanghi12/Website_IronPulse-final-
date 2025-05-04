@@ -46,10 +46,17 @@ const TopSellingAndLowQuantityStatistic = () => {
   };
 
   const getRemainQuantity = (product) => {
-    if (product.countInStock !== undefined) return product.countInStock;
     if (Array.isArray(product.sizes)) {
-      return product.sizes.reduce((sum, size) => sum + size.quantity, 0);
+      return product.sizes.reduce((sum, size) => {
+        const qty = typeof size.quantity === 'number' ? size.quantity : 0;
+        return sum + qty;
+      }, 0);
     }
+  
+    if (typeof product.countInStock === 'number') {
+      return product.countInStock;
+    }
+  
     return 0;
   };
 
@@ -76,11 +83,33 @@ const TopSellingAndLowQuantityStatistic = () => {
               <div style={{ flex: 1 }}>Price</div>
             </div>
             {topSellingProducts.map((product) => (
+              
               <div
                 key={product._id}
                 style={{ display: "flex", alignItems: "center", padding: "0.5rem 0", borderBottom: "1px solid #f0f0f0" }}
               >
-                <div style={{ flex: 2 }}>{product.name}</div>
+                <div style={{ flex: 2 }}>
+  <div style={{ fontWeight: "500" }}>{product.name}</div>
+  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "4px" }}>
+    {Array.isArray(product.colors) && product.colors.length > 0 ? (
+      product.colors.map((color, idx) => (
+        <div
+          key={idx}
+          title={color}
+          style={{
+            width: "16px",
+            height: "16px",
+            borderRadius: "50%",
+            backgroundColor: color,
+            border: "1px solid #ccc",
+          }}
+        />
+      ))
+    ) : (
+      <span style={{ fontSize: "12px", color: "#888" }}>No color</span>
+    )}
+  </div>
+</div>
                 <div style={{ flex: 1 }}>{product.totalSold ?? 0}</div>
                 <div style={{ flex: 1 }}>{getRemainQuantity(product)}</div>
                 <div style={{ flex: 1 }}><span>{VND.format(product.price)}</span></div>
@@ -113,10 +142,30 @@ const TopSellingAndLowQuantityStatistic = () => {
                 {/* Render tên sản phẩm và số lượng */}
                 <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div><strong>{product.name}</strong></div>
-                    <div>Quantity: {quantity}</div>
+                  <div>
+  <div><strong>{product.name}</strong></div>
+  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", margin: "4px 0" }}>
+    {Array.isArray(product.colors) && product.colors.length > 0 ? (
+      product.colors.map((color, idx) => (
+        <div
+          key={idx}
+          title={color}
+          style={{
+            width: "14px",
+            height: "14px",
+            borderRadius: "50%",
+            backgroundColor: color,
+            border: "1px solid #ccc",
+          }}
+        />
+      ))
+    ) : (
+      <span style={{ fontSize: "12px", color: "#888" }}>No color</span>
+    )}
+  </div>
+  <div>Quantity: {quantity}</div>
+</div>
                   </div>
-
                   {/* Hiển thị trạng thái "LOW" nếu số lượng ít */}
                     <div
                       style={{

@@ -54,7 +54,17 @@ const googleLogin = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 🕒 7 ngày
     });
 
-    res.json({ success: true, token });
+    res.json({
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+    
   } catch (error) {
     console.log('Google login error:', error);
     res.json({ success: false, message: 'Google login failed' });

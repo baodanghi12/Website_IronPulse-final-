@@ -6,8 +6,6 @@ export const createFlashSale = async (req, res) => {
   try {
     const { title, startTime, endTime, isActive, products } = req.body;
 
-    console.log("🛠 RECEIVED PRODUCTS:", products);
-
     const cleanProducts = products
       .filter(
         (p) =>
@@ -38,7 +36,7 @@ export const createFlashSale = async (req, res) => {
     });
 
     if (existing) {
-      console.log("🛠 Updating existing Flash Sale...");
+      
 
       cleanProducts.forEach((newItem) => {
         const existingItem = existing.products.find(
@@ -67,7 +65,6 @@ export const createFlashSale = async (req, res) => {
         products: cleanProducts,
       });
 
-      console.log("✅ Flash Sale CREATED:", flashSale);
       return res.json({ success: true, flashSale });
     }
   } catch (err) {
@@ -102,6 +99,7 @@ export const getActiveFlashSale = async (req, res) => {
         price: item.salePrice,
         priceBeforeSale: p.price,
         discountPercent: item.discountPercent,
+        sizes: p.sizes,
         isFlashSale: true, // ✅ để đánh dấu rõ ràng
       };
     });

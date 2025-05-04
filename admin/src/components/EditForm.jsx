@@ -271,25 +271,8 @@ const EditForm = ({ token, productId, onUpdateSuccess }) => {
         </div>
       </div>
 
-      {/* Best Seller and Flash Sale */}
-      <div className="flex gap-4">
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            checked={bestSeller}
-            onChange={() => setBestSeller(!bestSeller)}
-          />
-          <p className="ml-2">Best Seller</p>
-        </div>
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            checked={flashSale}
-            onChange={() => setFlashSale(!flashSale)}
-          />
-          <p className="ml-2">Flash Sale</p>
-        </div>
-        <div className="flex items-center">
+      {/* New Arrival only */}
+<div className="flex items-center">
   <input
     type="checkbox"
     checked={newArrival}
@@ -297,7 +280,6 @@ const EditForm = ({ token, productId, onUpdateSuccess }) => {
   />
   <p className="ml-2">New Arrival</p>
 </div>
-      </div>
 
       {/* Submit Button */}
       <button

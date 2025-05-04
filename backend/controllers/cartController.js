@@ -60,7 +60,7 @@ const addToCart = async (req, res) => {
 // Update số lượng sản phẩm trong giỏ hàng
 const updateCart = async (req, res) => {
   try {
-    const { itemId, size, quantity, color, oldSize, oldColor } = req.body;
+    const { itemId, size, quantity, color, oldSize, oldColor, cartData: fullCartFromClient } = req.body;
     const userId = req.userId;
 
     const user = await userModel.findById(userId);
@@ -68,6 +68,17 @@ const updateCart = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    // ✅ Nếu có fullCartFromClient (merge từ localStorage)
+    if (fullCartFromClient && typeof fullCartFromClient === 'object') {
+      user.cartData = fullCartFromClient;
+      user.markModified('cartData');
+      await user.save();
+
+      console.log('✅ Full cart merged from guestCart into user.cartData');
+      return res.json({ success: true, cartData: user.cartData });
+    }
+
+    // ✅ Logic cũ cho update từng sản phẩm
     const cartData = structuredClone(user.cartData || {});
 
     const buildKey = (s, c) => (c ? `${s}-${c}` : s);
@@ -76,11 +87,6 @@ const updateCart = async (req, res) => {
 
     cartData[itemId] = cartData[itemId] || {};
 
-    // ✅ Log trước khi cập nhật
-    console.log('🧾 cartData BEFORE:', JSON.stringify(cartData, null, 2));
-    console.log(`🔑 oldKey: ${oldKey}, newKey: ${newKey}`);
-
-    // ✅ Xoá key cũ nếu cần
     if (oldKey !== newKey && cartData[itemId][oldKey] !== undefined) {
       delete cartData[itemId][oldKey];
     }
@@ -93,11 +99,9 @@ const updateCart = async (req, res) => {
 
     user.cartData = cartData;
     user.markModified('cartData');
-
-    // ✅ Log sau khi cập nhật
-    console.log('✅ cartData AFTER:', JSON.stringify(cartData, null, 2));
-
     await user.save();
+
+    console.log('✅ cartData updated:', JSON.stringify(cartData, null, 2));
 
     res.json({ success: true, cartData });
   } catch (error) {
@@ -105,6 +109,7 @@ const updateCart = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 
 

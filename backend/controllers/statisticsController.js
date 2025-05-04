@@ -161,6 +161,7 @@ export const getOrderStatistics = async (req, res) => {
                 remainingQuantity: 0,
                 turnOver: 0,
                 count: 0,
+                color: item.colors?.[0] || null,
               };
             }
       

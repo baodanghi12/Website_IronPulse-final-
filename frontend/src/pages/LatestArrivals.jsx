@@ -35,7 +35,13 @@ const NewArrivals = () => {
   };
 
   const applyFilter = () => {
-    let productsCopy = products.filter((item) => item.newArrival === true);
+    let productsCopy = products.filter(
+      (item) =>
+        item.newArrival === true &&
+        Number(item.cost) > 0 &&
+        Array.isArray(item.sizes) &&
+        item.sizes.some((size) => Number(size.quantity) > 0)
+    );
 
     if (showSearch && search) {
       productsCopy = productsCopy.filter((item) =>
@@ -140,7 +146,7 @@ const NewArrivals = () => {
               <div className='pl-2 grid grid-cols-1 sm:grid-cols-2 gap-1'>
                 {[
                   'Hàng Mới Về', 'Áo Thun & Polo', 'Áo Khoác', 'Áo Sơ Mi', 'Cơ Bản',
-                  'Quần Short', 'Quần Dài', 'Quần Jean', 'Quần Âu',
+                  'Quần Short', 'Quần Dài', 'Quần Jean', 'Quần Âu', 'Topwear'
                 ].map((sub) => (
                   <label key={sub} className='flex items-center gap-2 text-sm text-gray-700'>
                     <input type="checkbox" value={sub} checked={subCategory.includes(sub)} onChange={toggleSubCategory} />
@@ -164,7 +170,7 @@ const NewArrivals = () => {
                 </div>
                 <input
                   type="range"
-                  min={270000}
+                  min={100000}
                   max={3000000}
                   value={priceRange[0]}
                   onChange={(e) => setPriceRange([+e.target.value, priceRange[1]])}
@@ -172,7 +178,7 @@ const NewArrivals = () => {
                 />
                 <input
                   type="range"
-                  min={270000}
+                  min={100000}
                   max={3000000}
                   value={priceRange[1]}
                   onChange={(e) => setPriceRange([priceRange[0], +e.target.value])}
