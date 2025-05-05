@@ -8,11 +8,25 @@ const ForgetPassword = () => {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [step, setStep] = useState(1);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const backendUrl = "http://localhost:4000";
   const otpInputRefs = useRef([]);
   const navigate = useNavigate();
+
+  // Hàm kiểm tra email hợp lệ
+  const isValidEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
+  // Hàm kiểm tra mật khẩu hợp lệ
+  const isValidPassword = (password) => {
+    // Kiểm tra mật khẩu có ít nhất 1 chữ cái, 1 chữ số và 1 ký tự đặc biệt
+    const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,20}$/;
+    return regex.test(password);
+  };
 
   useEffect(() => {
     if (step === 2) otpInputRefs.current[0]?.focus();
@@ -37,6 +51,10 @@ const ForgetPassword = () => {
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
+    if (!isValidEmail(email)) {
+      toast.error('Email không hợp lệ!');
+      return;
+    }
     try {
       const response = await axios.post(backendUrl + '/api/user/send-reset-otp', { email });
       response.data.success ? (toast.success('OTP đã gửi vào email'), setStep(2)) : toast.error(response.data.message);
@@ -47,6 +65,10 @@ const ForgetPassword = () => {
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    if (otp.length !== 6) {
+      toast.error('Mã OTP phải có 6 chữ số');
+      return;
+    }
     try {
       const response = await axios.post(backendUrl + '/api/user/verify-reset-otp', { email, otp });
       if (response.data.success) {
@@ -54,7 +76,7 @@ const ForgetPassword = () => {
         setStep(3);
         toast.success('OTP xác thực thành công');
       } else {
-        toast.error(response.data.message);
+        toast.error('OTP không chính xác hoặc đã hết hạn');
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Lỗi từ máy chủ');
@@ -64,6 +86,13 @@ const ForgetPassword = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (!isOtpVerified) return toast.error('OTP không hợp lệ');
+    if (newPassword !== confirmPassword) {
+      return toast.error('Mật khẩu và xác nhận mật khẩu không khớp');
+    }
+    if (!isValidPassword(newPassword)) {
+      toast.error('Mật khẩu phải có ít nhất 6 ký tự và chứa chữ cái và số');
+      return;
+    }
     try {
       const response = await axios.post(backendUrl + '/api/user/reset-password', { email, otp, newPassword });
       if (response.data.success) {
@@ -84,7 +113,7 @@ const ForgetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-gray-800 bg-opacity-50 backdrop-blur-md">
       <AnimatePresence mode="wait">
         <motion.div
           key={step}
@@ -96,12 +125,12 @@ const ForgetPassword = () => {
         >
           {step === 1 && (
             <form onSubmit={handleSendOtp}>
-              <h2 className="text-2xl font-bold text-center">Quên mật khẩu</h2>
-              <p className="text-center text-gray-500 mb-4">Nhập email của bạn để nhận mã OTP</p>
+              <h2 className="text-3xl font-semibold text-center text-indigo-700">Quên mật khẩu</h2>
+              <p className="text-center text-gray-600 mb-4">Nhập email của bạn để nhận mã OTP</p>
               <input
                 type="email"
                 required
-                className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -117,8 +146,8 @@ const ForgetPassword = () => {
 
           {step === 2 && (
             <form onSubmit={handleVerifyOtp}>
-              <h2 className="text-2xl font-bold text-center">Xác thực OTP</h2>
-              <p className="text-center text-gray-500 mb-4">Nhập mã 6 số từ email của bạn</p>
+              <h2 className="text-3xl font-semibold text-center text-indigo-700">Xác thực OTP</h2>
+              <p className="text-center text-gray-600 mb-4">Nhập mã 6 số từ email của bạn</p>
               <div className="flex justify-center space-x-2">
                 {[...Array(6)].map((_, i) => (
                   <input
@@ -145,15 +174,23 @@ const ForgetPassword = () => {
 
           {step === 3 && isOtpVerified && (
             <form onSubmit={handleResetPassword}>
-              <h2 className="text-2xl font-bold text-center">Đặt lại mật khẩu</h2>
-              <p className="text-center text-gray-500 mb-4">Nhập mật khẩu mới của bạn</p>
+              <h2 className="text-3xl font-semibold text-center text-indigo-700">Đặt lại mật khẩu</h2>
+              <p className="text-center text-gray-600 mb-4">Nhập mật khẩu mới của bạn</p>
               <input
                 type="password"
                 required
-                className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                 placeholder="Mật khẩu mới"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <input
+                type="password"
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none mt-4"
+                placeholder="Xác nhận mật khẩu mới"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
               <button
                 type="submit"

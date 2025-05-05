@@ -34,7 +34,7 @@ const billSchema = new mongoose.Schema(
     shipping: { type: Number },
     discount: { type: Number },
     note: { type: String },
-    date: { type: Number },
+    promotionCode: { type: String },
   },
   { timestamps: true }
 );

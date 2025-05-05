@@ -114,7 +114,7 @@ const UserManagement = ({ role }) => {
 
   const handleBlockToggle = async (user) => {
     try {
-      await axios.put(`/api/user/${user._id}/block`, {
+      await axios.patch(`/api/user/block/${user._id}`, {
         isBlocked: !user.isBlocked,
       });
       message.success(`${user.isBlocked ? 'Unblocked' : 'Blocked'} successfully`);

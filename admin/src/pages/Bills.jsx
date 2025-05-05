@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import { Button } from 'antd';
-
+import { VND } from '../utils/handleCurrency';
 const { RangePicker } = DatePicker;
 
 const Bills = ({ token }) => {
@@ -147,12 +147,9 @@ const Bills = ({ token }) => {
                     #{bill._id.slice(-6).toUpperCase()}
                   </span>
                 </td>
-                <td className="px-4 py-2">
-  {bill.address?.firstName || bill.address?.name || 'N/A'} {bill.address?.lastName || ''}
-</td>
-<td className="px-4 py-2">
-  {`${bill.address?.street || ''}, ${bill.address?.city || ''}, ${bill.address?.state || ''}`}
-</td>
+                <td className='px-4 py-2'>{bill.address?.firstName || bill.address?.name || 'No name'}</td>
+
+                <td className='px-4 py-2'>{`${bill.address?.street}, ${bill.address?.city}, ${bill.address?.state}`}</td>
 
 
 
@@ -164,7 +161,7 @@ const Bills = ({ token }) => {
 
 
                 <td className="px-4 py-2">{bill.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
-                <td className="px-4 py-2">{currency} {bill.amount.toLocaleString()}</td>
+                <td className="px-4 py-2">{VND.format(bill.amount)}</td>
               </tr>
             ))}
           </tbody>
@@ -172,7 +169,11 @@ const Bills = ({ token }) => {
       )}
 
       {/* Popup Bill Detail */}
-      {selectedBill && (
+
+
+{/* Popup Bill Detail */}
+{/* Popup Bill Detail */}
+{selectedBill && (
   <div
     className="fixed top-0 left-0 w-full h-full flex justify-center items-center z-50 bg-transparent"
     onClick={() => setSelectedBill(null)}
@@ -194,13 +195,11 @@ const Bills = ({ token }) => {
 
       {/* Info Section */}
       <div className="flex items-center space-x-6 mb-6">
-        {/* Avatar Placeholder */}
         <img
           src={selectedBill.avatar || '/default-avatar.png'}
           alt="Avatar"
           className="w-16 h-16 rounded-full object-cover"
         />
-        {/* Basic Info */}
         <div>
           <p>
             <strong>Bill ID:</strong>{' '}
@@ -212,57 +211,79 @@ const Bills = ({ token }) => {
               display: 'inline-block',
               fontWeight: 'bold'
             }}>
-              #{selectedBill._id.slice(-6).toUpperCase()}
+              #{selectedBill._id?.slice(-6).toUpperCase()}
             </span>
           </p>
-          <p><strong>Name:</strong> {selectedBill.shippingAddress?.firstName || 'N/A'} {selectedBill.shippingAddress?.lastName || ''}</p>
-<p><strong>Address:</strong> {`${selectedBill.shippingAddress?.street || ''}, ${selectedBill.shippingAddress?.city || ''}, ${selectedBill.shippingAddress?.state || ''}, ${selectedBill.shippingAddress?.country || ''}, ${selectedBill.shippingAddress?.zipcode || ''}`}</p>
-
-
-<p><strong>Phone:</strong> {selectedBill.shippingAddress?.phone}</p>
-
-
-          <p><strong>Date:</strong> {new Date(selectedBill.date).toLocaleString()}</p>
+          <p><strong>Name:</strong> {selectedBill.address?.firstName || ''} {selectedBill.address?.lastName || ''}</p>
+          <p><strong>Address:</strong> {selectedBill.address?.street || ''}, {selectedBill.address?.city || ''}, {selectedBill.address?.state || ''}, {selectedBill.address?.country || ''}</p>
+          <p><strong>Phone:</strong> {selectedBill.address?.phone || 'N/A'}</p>
+          <p><strong>Date:</strong> 
+            {(selectedBill.date || selectedBill.createdAt)
+              ? new Date(selectedBill.date || selectedBill.createdAt).toLocaleString()
+              : 'Invalid Date'}
+          </p>
+          {selectedBill.note && (
+            <div className="mt-2">
+              <strong>Note:</strong>
+              <div className="bg-gray-100 p-2 mt-1 rounded">{selectedBill.note}</div>
+            </div>
+          )}
+          {selectedBill.paymentMethod && (
+            <p className="mt-2">
+              <strong>Payment Method:</strong>{' '}
+              <span className={`inline-block px-2 py-1 rounded text-sm font-medium ${selectedBill.paymentMethod === 'COD' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+                {selectedBill.paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'}
+              </span>
+            </p>
+          )}
         </div>
       </div>
 
       <hr className="my-3" />
 
       {/* Items Table */}
-      <table className="w-full table-auto border border-gray-300 mb-4">
-        <thead className="bg-gray-100">
+      <table className="w-full table-auto border border-gray-300 mb-4 text-sm">
+        <thead className="bg-gray-100 text-gray-700">
           <tr>
             <th className="text-left px-2 py-1">#</th>
             <th className="text-left px-2 py-1">Item Name</th>
+            <th className="text-left px-2 py-1">Category</th>
             <th className="text-left px-2 py-1">Quantity</th>
             <th className="text-left px-2 py-1">Price</th>
           </tr>
         </thead>
         <tbody>
-          {selectedBill.items.map((item, idx) => (
-            <tr key={idx} className="border-t">
+          {selectedBill.items?.map((item, idx) => (
+            <tr key={idx} className="border-t text-gray-700">
               <td className="px-2 py-1">{idx + 1}</td>
               <td className="px-2 py-1">{item.name}</td>
+              <td className="px-2 py-1">{item.category || 'N/A'}</td>
               <td className="px-2 py-1">{item.quantity}</td>
-              <td className="px-2 py-1">{currency} {item.price.toLocaleString()}</td>
+              <td className="px-2 py-1">{VND.format(item.price)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       {/* Summary */}
-      <div className="flex flex-col text-right space-y-1">
-        <p><strong>Total Amount:</strong> {currency} {selectedBill.amount.toLocaleString()}</p>
-      </div>
-
-      <div className="text-left mt-4">
-        <Button type="primary" onClick={() => handlePrintBill(selectedBill)}>
-          🖨 In Bill Detail
-        </Button>
+      <div className="flex flex-col items-end space-y-1 text-sm text-gray-800">
+        <p><strong>Tạm tính:</strong> {VND.format((selectedBill.amount + (selectedBill.discountAmount || 0) - (selectedBill.shippingFee || 0)))}</p>
+        <p><strong>Phí vận chuyển:</strong> {VND.format(selectedBill.shippingFee || 0)}</p>
+        <p>
+          {selectedBill.promotionCode && (
+            <span className="text-gray-500">(Mã: {selectedBill.promotionCode}) </span>
+          )}
+          <strong>Giảm giá:</strong> -{VND.format(selectedBill.discountAmount || 0)}
+        </p>
+        <p className="text-gray-500"><strong>Tổng cộng:</strong> {VND.format(selectedBill.amount)}</p>
       </div>
     </div>
   </div>
 )}
+
+
+
+
 
     </div>
   );

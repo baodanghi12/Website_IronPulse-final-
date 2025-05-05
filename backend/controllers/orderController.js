@@ -6,6 +6,149 @@ import BillModel from '../models/BillModel.js';
 import productModel from "../models/productModel.js";
 import promotionModel from "../models/promotionModel.js"
 import mongoose from 'mongoose';
+import qs from 'qs'
+import crypto from 'crypto'
+import moment from "moment";
+import axios from 'axios';
+//Zalo
+const config = {
+  app_id: "2554",
+  key1: "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn",
+  endpoint: "https://sb-openapi.zalopay.vn/v2/create",
+};
+
+const placeOrderZalo = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { items, address, phone, promotionCode } = req.body;
+
+    const subTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shippingFee = 30000;
+
+    let discountAmount = 0;
+    let promoCode = promotionCode || null;
+
+    if (promoCode) {
+      const promo = await promotionModel.findOne({ code: promoCode });
+      if (promo && promo.isActive && promo.numOfAvailable > 0) {
+        discountAmount = promo.type === 'percent'
+          ? Math.round((subTotal * promo.value) / 100)
+          : promo.value;
+        await promotionModel.updateOne({ _id: promo._id }, { $inc: { numOfAvailable: -1 } });
+        console.log(`🔖 Promotion "${promoCode}" used. Discount: ${discountAmount}`);
+      } else {
+        promoCode = null;
+      }
+    }
+
+    const amount = subTotal + shippingFee - discountAmount;
+
+    const orderData = {
+      userId,
+      items,
+      address,
+      phone,
+      amount,
+      paymentMethod: "ZaloPay",
+      payment: false,
+      promotionCode: promoCode,
+      discountAmount,
+      shippingFee,
+      date: Date.now()
+    };
+
+    const newOrder = new orderModel(orderData);
+    await newOrder.save();
+
+    const embed_data = {
+      redirecturl: `${process.env.CLIENT_URL}/verify?orderId=${newOrder._id}&paymentMethod=zalopay`,
+    };
+
+    const items_data = items.map((item) => ({
+      itemid: item._id,
+      itemname: item.name,
+      itemprice: item.price,
+      itemquantity: item.quantity,
+    }));
+
+    const app_trans_id = `${moment().format('YYMMDD')}_${newOrder._id.toString().slice(-6)}`;
+
+    const order = {
+      app_id: config.app_id,
+      app_trans_id,
+      app_user: userId,
+      app_time: Date.now(),
+      amount,
+      item: JSON.stringify(items_data),
+      description: `Thanh toán đơn hàng #${newOrder._id}`,
+      embed_data: JSON.stringify(embed_data),
+      bank_code: 'zalopayapp',
+      callback_url: 'http://localhost:4000/api/order/verifyZalopay',
+    };
+
+    const dataString = `${config.app_id}|${order.app_trans_id}|${order.app_user}|${order.amount}|${order.app_time}|${order.embed_data}|${order.item}`;
+    order.mac = crypto.createHmac('sha256', config.key1).update(dataString).digest('hex');
+
+    console.log("📤 Sending to ZaloPay:", order);
+    const zalopayRes = await axios.post(config.endpoint, null, { params: order });
+    console.log("📥 ZaloPay response:", zalopayRes.data);
+
+    if (zalopayRes.data.return_code === 1) {
+      res.status(200).json({ success: true, zalo_url: zalopayRes.data.order_url });
+    } else {
+      res.status(500).json({ success: false, message: zalopayRes.data.return_message });
+    }
+
+  } catch (error) {
+    console.error("❌ placeOrderZalo error:", error);
+    res.status(500).json({ success: false, message: "ZaloPay order creation failed" });
+  }
+};
+
+const markZaloOrderAsPaid = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { orderId } = req.body;
+
+    const order = await orderModel.findOneAndUpdate(
+      { _id: orderId, userId },
+      { payment: true },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    await userModel.findByIdAndUpdate(userId, { cartData: {} });
+
+    for (const item of order.items) {
+      const product = await productModel.findById(item._id);
+      if (!product) continue;
+
+      const sizeKey = item.size?.split('-')[0];
+      const updatedSizes = product.sizes.map(sizeObj => {
+        if (sizeObj.size.trim() === sizeKey) {
+          return {
+            ...sizeObj,
+            quantity: Math.max(0, sizeObj.quantity - item.quantity)
+          };
+        }
+        return sizeObj;
+      });
+
+      product.sizes = updatedSizes;
+      product.markModified('sizes');
+      await product.save();
+    }
+
+    return res.json({ success: true, message: "Payment confirmed and stock updated" });
+  } catch (error) {
+    console.error("❌ markZaloOrderAsPaid error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // global variables
 const currency = "inr" // currency for stripe payment
 const deliveryCharges = 10 // delivery charges for stripe payment
@@ -271,14 +414,21 @@ const userOrders = async (req, res) => {
             status: updatedOrder.status,
             customer_id: updatedOrder.userId,
             shippingAddress: {
-              address: `${updatedOrder.address?.street || ''}, ${updatedOrder.address?.city || ''}, ${updatedOrder.address?.state || ''}, ${updatedOrder.address?.country || ''}`,
-              _id: updatedOrder.address?._id?.toString() || '',
+              firstName: updatedOrder.address?.firstName || '',
+              lastName: updatedOrder.address?.lastName || '',
+              phone: updatedOrder.address?.phone || updatedOrder.phone || '',
+              street: updatedOrder.address?.street || '',
+              city: updatedOrder.address?.city || '',
+              state: updatedOrder.address?.state || '',
+              country: updatedOrder.address?.country || '',
+              zipcode: updatedOrder.address?.zipcode || '',
             },
             paymentStatus: 1,
             paymentMethod: updatedOrder.paymentMethod,
-            address: updatedOrder.address, // ⬅ thêm toàn bộ address để dễ truy xuất tên
-            date: updatedOrder.date || updatedOrder.createdAt, // ⬅ dùng date để hiển thị ngày tạo
+            address: updatedOrder.address,
+            date: updatedOrder.date || updatedOrder.createdAt,
           });
+          
   
           await bill.save();
           console.log(`✅ Bill đã lưu từ đơn hàng ${updatedOrder._id}`);
@@ -346,8 +496,6 @@ const getUserOrders = async (req, res) => {
       res.status(500).json({ success: false, message: error.message });
     }
   };
-  
-  
-  
-  
-export { verifyStripe ,placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus, getUserOrders, addReviewToOrder}
+
+  export { verifyStripe ,placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders,
+     updateStatus, getUserOrders, addReviewToOrder,placeOrderZalo, markZaloOrderAsPaid }

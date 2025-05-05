@@ -512,10 +512,10 @@ const Orders = ({ token }) => {
               <p><strong>Tạm tính:</strong> {VND.format(selectedOrder.amount + (selectedOrder.discountAmount || 0) - (selectedOrder.shippingFee || 0))}</p>
 <p><strong>Phí vận chuyển:</strong> {VND.format(selectedOrder.shippingFee || 0)}</p>
 <p>
-  {selectedOrder.promotionCode && (
-    <span className="text-gray-500">(Mã: {selectedOrder.promotionCode}) </span>
-  )}
   <strong>Giảm giá:</strong>{' '}
+  {selectedOrder.promotionCode && (
+    <span className="text-gray-500">(Mã: {selectedOrder.promotionCode})</span>
+  )}{' '}
   -{VND.format(selectedOrder.discountAmount || 0)}
 </p>
 <p><strong>Tổng cộng:</strong> <strong>{VND.format(selectedOrder.amount)}</strong></p>

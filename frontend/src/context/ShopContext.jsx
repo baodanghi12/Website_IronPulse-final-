@@ -219,13 +219,29 @@ const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
       const productsFromDB = productRes.data.products || [];
   
       // ❌ Không cần merge Flash Sale nữa vì đã có flashSaleItems riêng
-      const enriched = productsFromDB.map(p => ({
-        ...p,
-        isFlashSale: false,
-        discountPercent: 0,
-        priceBeforeSale: undefined,
-        price: p.price,
-      }));
+      const enriched = productsFromDB.map(p => {
+        const saleItem = flashSaleItems.find(s => s._id === p._id);
+        if (saleItem) {
+          return {
+            ...p,
+            flashSale: {
+              isActive: true,
+              price: saleItem.price,
+            },
+            priceBeforeSale: p.price,
+            price: saleItem.price,
+          };
+        }
+        return {
+          ...p,
+          flashSale: {
+            isActive: false,
+            price: null,
+          },
+        };
+      });
+      
+      
   
       setProducts(enriched);
     } catch (error) {
@@ -238,8 +254,10 @@ const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
   
 
   useEffect(() => {
-    getProdcutsData();
-  }, []);
+    if (flashSaleItems.length > 0) {
+      getProdcutsData(); // ✅ load lại product sau khi có flashSale
+    }
+  }, [flashSaleItems]);
   useEffect(() => {
     if (userInfo && userInfo._id) {
       loadWishlist(); // ✅ Gọi lại sau khi userInfo đã có _id

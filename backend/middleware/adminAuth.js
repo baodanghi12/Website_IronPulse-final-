@@ -17,7 +17,7 @@ const adminAuth = async (req, res, next) => {
         const user = await userModel.findById(token_decode.id);
         
         // Kiểm tra xem người dùng có phải là admin hay không
-        if (!user || user.role !== 'admin') {
+        if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
             return res.status(403).json({ success: false, message: "Not Authorized Login Again" });
         }
 

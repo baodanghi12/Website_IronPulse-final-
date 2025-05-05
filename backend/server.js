@@ -34,7 +34,7 @@ connectCloudinary()
 // middlewares
 app.use(express.json())
 app.use(cookieParser())
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false })); // ⬅ dùng false cho form data như ZaloPay
 app.use(cors({
     origin: ['http://localhost:5173', 'http://localhost:5174'],
     credentials: true,
@@ -59,6 +59,7 @@ app.use('/api/promotions', promotionRouter)
 app.use('/api/notifications', notificationRoute);
 app.use('/api/auth', authRouter)
 app.use("/api/flashsale", flashSaleRoutes);
+
 
 app.get('/',(req,res)=>{
     res.send("API Working")

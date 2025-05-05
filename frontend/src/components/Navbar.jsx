@@ -2,8 +2,10 @@ import React, { useContext, useState, useRef, useEffect } from 'react';
 import { assets } from '../assets/assets';
 import { Link, NavLink } from 'react-router-dom';
 import { ShopContext } from '../context/ShopContext';
+import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef();
@@ -42,19 +44,19 @@ const Navbar = () => {
       </Link>
 
       <ul className='hidden sm:flex gap-8 text-sm text-gray-600'>
-        <NavLink to='/' className='flex flex-col items-center'><p className='hover:text-red-500'>HOME</p></NavLink>
-        <NavLink to='/collection' className='flex flex-col items-center'><p className='hover:text-red-500'>COLLECTION</p></NavLink>
-        <NavLink to='/about' className='flex flex-col items-center'><p className='hover:text-red-500'>ABOUT</p></NavLink>
-        <NavLink to='/contact' className='flex flex-col items-center'><p className='hover:text-red-500'>CONTACT</p></NavLink>
+        <NavLink to='/' className='flex flex-col items-center'><p className='hover:text-red-500'>{t('home')}</p></NavLink>
+        <NavLink to='/collection' className='flex flex-col items-center'><p className='hover:text-red-500'>{t('collection')}</p></NavLink>
+        <NavLink to='/about' className='flex flex-col items-center'><p className='hover:text-red-500'>{t('about')}</p></NavLink>
+        <NavLink to='/contact' className='flex flex-col items-center'><p className='hover:text-red-500'>{t('contact')}</p></NavLink>
 
         {/* MEN */}
         <div className="relative" onMouseEnter={() => handleMouseEnter('men')} onMouseLeave={handleMouseLeave}>
           <NavLink to='/men' className='flex flex-col items-center cursor-pointer'><p className='hover:text-red-500'>MEN</p></NavLink>
           {hoveredMenu === 'men' && (
             <div className='absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white shadow-lg rounded-lg py-6 px-8 grid grid-cols-3 gap-8 justify-center z-50 text-sm text-gray-800 min-w-[720px]'>
-              <div><p className='font-bold mb-2'>NỔI BẬT</p><NavLink to='/men' className='text-red-600 font-bold text-3xl leading-tight hover:underline'>UP TO 50%</NavLink></div>
-              <div><p className='font-bold mb-2'>ÁO</p><NavLink to='/men/category/Áo Thun & Polo' className='block hover:underline'>Áo Thun & Polo</NavLink><NavLink to='/men/category/Áo Khoác' className='block hover:underline'>Áo khoác</NavLink><NavLink to='/men/category/Áo sơ mi' className='block hover:underline'>Áo sơ mi</NavLink></div>
-              <div><p className='font-bold mb-2'>QUẦN</p><NavLink to='/men/quan/Quần short' className='block hover:underline'>Quần short</NavLink><NavLink to='/men/quan/Quần dài' className='block hover:underline'>Quần dài</NavLink><NavLink to='/men/quan/Quần Jean' className='block hover:underline'>Quần Jean</NavLink><NavLink to='/men/quan/Quần âu' className='block hover:underline'>Quần Âu</NavLink></div>
+              <div><p className='font-bold mb-2'>{t('outstading')}</p><NavLink to='/men' className='text-red-600 font-bold text-3xl leading-tight hover:underline'>UP TO 50%</NavLink></div>
+              <div><p className='font-bold mb-2'>{t('shirt')}</p><NavLink to='/men/category/Áo Thun & Polo' className='block hover:underline'>Áo Thun & Polo</NavLink><NavLink to='/men/category/Áo Khoác' className='block hover:underline'>Áo khoác</NavLink><NavLink to='/men/category/Áo sơ mi' className='block hover:underline'>Áo sơ mi</NavLink></div>
+              <div><p className='font-bold mb-2'>{t('pants')}</p><NavLink to='/men/quan/Quần short' className='block hover:underline'>Quần short</NavLink><NavLink to='/men/quan/Quần dài' className='block hover:underline'>Quần dài</NavLink><NavLink to='/men/quan/Quần Jean' className='block hover:underline'>Quần Jean</NavLink><NavLink to='/men/quan/Quần âu' className='block hover:underline'>Quần Âu</NavLink></div>
             </div>
           )}
         </div>
@@ -64,9 +66,9 @@ const Navbar = () => {
           <NavLink to='/women' className='flex flex-col items-center cursor-pointer'><p className='hover:text-red-500'>WOMEN</p></NavLink>
           {hoveredMenu === 'women' && (
             <div className='absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white shadow-lg rounded-lg py-6 px-8 grid grid-cols-4 gap-8 justify-center z-50 text-sm text-gray-800 min-w-[960px]'>
-              <div><p className='font-bold mb-2'>NỔI BẬT</p><NavLink to='/women' className='text-red-600 font-bold text-3xl leading-tight hover:underline'>UP TO 50%</NavLink></div>
-              <div><p className='font-bold mb-2'>ÁO</p><NavLink to='/women/category/Áo' className='block hover:underline'>Áo</NavLink><NavLink to='/women/category/Áo thun' className='block hover:underline'>Áo thun</NavLink><NavLink to='/women/category/Áo khoác' className='block hover:underline'>Áo khoác</NavLink><NavLink to='/women/category/Áo sơ mi' className='block hover:underline'>Áo sơ mi</NavLink><NavLink to='/women/category/Áo Croptop' className='block hover:underline'>Áo croptop</NavLink></div>
-              <div><p className='font-bold mb-2'>QUẦN</p><NavLink to='/women/quan/Quần short' className='block hover:underline'>Quần short</NavLink><NavLink to='/women/quan/Quần tây' className='block hover:underline'>Quần tây</NavLink><NavLink to='/women/quan/Quần Jean' className='block hover:underline'>Quần Jean</NavLink></div>
+              <div><p className='font-bold mb-2'>{t('outstading')}</p><NavLink to='/women' className='text-red-600 font-bold text-3xl leading-tight hover:underline'>UP TO 50%</NavLink></div>
+              <div><p className='font-bold mb-2'>{t('shirt')}</p><NavLink to='/women/category/Áo' className='block hover:underline'>Áo</NavLink><NavLink to='/women/category/Áo thun' className='block hover:underline'>Áo thun</NavLink><NavLink to='/women/category/Áo khoác' className='block hover:underline'>Áo khoác</NavLink><NavLink to='/women/category/Áo sơ mi' className='block hover:underline'>Áo sơ mi</NavLink><NavLink to='/women/category/Áo Croptop' className='block hover:underline'>Áo croptop</NavLink></div>
+              <div><p className='font-bold mb-2'>{t('pants')}</p><NavLink to='/women/quan/Quần short' className='block hover:underline'>Quần short</NavLink><NavLink to='/women/quan/Quần tây' className='block hover:underline'>Quần tây</NavLink><NavLink to='/women/quan/Quần Jean' className='block hover:underline'>Quần Jean</NavLink></div>
               <div><p className='font-bold mb-2'>VÁY/ĐẦM</p><NavLink to='/women/vaydam/Váy ngắn' className='block hover:underline'>Váy ngắn</NavLink><NavLink to='/women/vaydam/Váy dài' className='block hover:underline'>Váy dài</NavLink><NavLink to='/women/vaydam/Đầm dự tiệc' className='block hover:underline'>Đầm dự tiệc</NavLink><NavLink to='/women/vaydam/Đầm công sở' className='block hover:underline'>Đầm công sở</NavLink></div>
             </div>
           )}
@@ -77,9 +79,9 @@ const Navbar = () => {
           <NavLink to='/children' className='flex flex-col items-center cursor-pointer'><p className='hover:text-red-500'>CHILDREN</p></NavLink>
           {hoveredMenu === 'children' && (
             <div className='absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white shadow-lg rounded-lg py-6 px-8 grid grid-cols-3 gap-8 justify-center z-50 text-sm text-gray-800 min-w-[720px]'>
-              <div><p className='font-bold mb-2'>NỔI BẬT</p><NavLink to='/children' className='text-red-600 font-bold text-3xl leading-tight hover:underline'>UP TO 50%</NavLink></div>
-              <div><p className='font-bold mb-2'>ÁO</p><NavLink to='/children/category/Áo Thun' className='block hover:underline'>Áo thun</NavLink><NavLink to='/children/category/Áo Khoác' className='block hover:underline'>Áo khoác</NavLink><NavLink to='/children/category/Áo sơ mi' className='block hover:underline'>Áo sơ mi</NavLink></div>
-              <div><p className='font-bold mb-2'>QUẦN</p><NavLink to='/children/pants/Quần short' className='block hover:underline'>Quần short</NavLink><NavLink to='/children/pants/Quần dài' className='block hover:underline'>Quần dài</NavLink><NavLink to='/children/pants/Quần Jean' className='block hover:underline'>Quần Jean</NavLink></div>
+              <div><p className='font-bold mb-2'>{t('outstading')}</p><NavLink to='/children' className='text-red-600 font-bold text-3xl leading-tight hover:underline'>UP TO 50%</NavLink></div>
+              <div><p className='font-bold mb-2'>{t('shirt')}</p><NavLink to='/children/category/Áo Thun' className='block hover:underline'>Áo thun</NavLink><NavLink to='/children/category/Áo Khoác' className='block hover:underline'>Áo khoác</NavLink><NavLink to='/children/category/Áo sơ mi' className='block hover:underline'>Áo sơ mi</NavLink></div>
+              <div><p className='font-bold mb-2'>{t('pants')}</p><NavLink to='/children/pants/Quần short' className='block hover:underline'>Quần short</NavLink><NavLink to='/children/pants/Quần dài' className='block hover:underline'>Quần dài</NavLink><NavLink to='/children/pants/Quần Jean' className='block hover:underline'>Quần Jean</NavLink></div>
             </div>
           )}
         </div>
@@ -88,7 +90,7 @@ const Navbar = () => {
       </ul>
 
       <NavLink to='/category/sale' className='hidden sm:flex items-center justify-center text-sm text-red-600 bg-gray-100 p-2 rounded-lg'>
-        Giảm đến 40% + 10% cho Hội viên!
+      {t('sale40')}
       </NavLink>
 
       <div className='flex items-center gap-8'>
@@ -110,10 +112,10 @@ const Navbar = () => {
                       <p className='text-sm text-gray-500'>{userInfo.email}</p>
                     </div>
                   </div>
-                  <Link to='/profile' className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded'><span className='material-icons text-gray-600'>person</span>My Account</Link>
-                  <Link to='/orders' className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded'><span className='material-icons text-gray-600'>assignment</span>Orders</Link>
-                  <Link to='/wishlist' className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded'><span className='material-icons text-gray-600'>favorite</span>My List</Link>
-                  <p onClick={() => { setUserInfo(null); setToken(null); localStorage.removeItem('token'); }} className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded cursor-pointer'><span className='material-icons text-gray-600'>logout</span>Logout</p>
+                  <Link to='/profile' className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded'><span className='material-icons text-gray-600'>person</span>{t('myaccount')}</Link>
+                  <Link to='/orders' className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded'><span className='material-icons text-gray-600'>assignment</span>{t('orders')}</Link>
+                  <Link to='/wishlist' className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded'><span className='material-icons text-gray-600'>favorite</span>{t('favorite')}</Link>
+                  <p onClick={() => { setUserInfo(null); setToken(null); localStorage.removeItem('token'); }} className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded cursor-pointer'><span className='material-icons text-gray-600'>logout</span>{t('logout')}</p>
                 </div>
               )}
             </>
@@ -134,13 +136,13 @@ const Navbar = () => {
             <img className='h-4 rotate-180' src={assets.dropdown_icon} alt="Back" />
             <p>Back</p>
           </div>
-          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/'>HOME</NavLink>
-          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/collection'>COLLECTION</NavLink>
-          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/about'>ABOUT</NavLink>
-          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/contact'>CONTACT</NavLink>
-          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/men'>MEN</NavLink>
-          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/women'>WOMEN</NavLink>
-          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/children'>CHILDREN</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/'>{t('home')}</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/collection'>{t('collection')}</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/about'>{t('about')}</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/contact'>{t('contact')}</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/men'>{t('men')}</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/women'>{t('women')}</NavLink>
+          <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/children'>{t('children')}</NavLink>
           <NavLink onClick={() => setVisible(false)} className='py-2 pl-6 border-b' to='/new-arrivals'>NEW ARRIVALS</NavLink>
         </div>
       </div>

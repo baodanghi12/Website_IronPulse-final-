@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
 const AboutUs = () => {
+  const { t } = useTranslation();
   const [showPopup, setShowPopup] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '' });
-   useEffect(() => {
-     window.scrollTo({ top: 0, behavior: 'smooth' });
-   }, []);
-  
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const handleInputChange = (e) => {
     setFormData(prev => ({
       ...prev,
@@ -18,7 +21,7 @@ const AboutUs = () => {
     e.preventDefault();
     // Simulate submission
     console.log('Đăng ký:', formData);
-    alert('Cảm ơn bạn đã đăng ký!');
+    alert(t('thankYouMessage'));
     setShowPopup(false);
     setFormData({ name: '', email: '' });
   };
@@ -27,32 +30,32 @@ const AboutUs = () => {
     <div className="bg-black text-white py-10 px-5 relative">
       <div className="max-w-2xl mx-auto text-center">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-          STORIES, STYLES AND STREETWEAR AT IRON PULSE,
+          {t('aboutUsTitle')}
         </h1>
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6">
-          SINCE 2025
+          {t('since2025')}
         </h2>
         <p className="text-base sm:text-lg md:text-xl mb-6">
-          Since 2025, Iron Pulse has been redefining streetwear by weaving together the raw energy of urban culture with bold, innovative designs. Our journey began with a vision to create unique, artistic collections that embody fashion’s ability to serve as a self-expression.
+          {t('aboutUsDescription1')}
         </p>
         <p className="text-base sm:text-lg md:text-xl mb-6">
-          From oversized hoodies to graphic tees, each piece tells a story, reflecting the spirit of the streets and the individuality of those who wear them. We believe that fashion is not just about clothing; it's an art form, a way to express who you are.
+          {t('aboutUsDescription2')}
         </p>
         <p className="text-base sm:text-lg md:text-xl mb-6">
-          Iron Pulse is a brand that's more than just apparel; it's a movement, an attitude, and a lifestyle. With Iron Pulse, you’re not just wearing streetwear; you’re living it, shaping it and telling your story with every step.
+          {t('aboutUsDescription3')}
         </p>
       </div>
 
       {/* Banner Section */}
       <div className="bg-yellow-500 text-center py-4 flex justify-center items-center">
         <h2 className="text-xl font-bold text-black mr-4">
-          TRỞ THÀNH HỘI VIÊN & HƯỞNG ƯU ĐÃI 20%
+          {t('membershipTitle')}
         </h2>
         <button
           className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800 transition duration-300"
           onClick={() => setShowPopup(true)}
         >
-          ĐĂNG KÝ MIỄN PHÍ →
+          {t('popupButton')}
         </button>
       </div>
 
@@ -64,15 +67,15 @@ const AboutUs = () => {
               className="absolute top-2 right-3 text-gray-500 hover:text-black text-xl"
               onClick={() => setShowPopup(false)}
             >
-              ×
+              {t('popupCloseButton')}
             </button>
-            <h2 className="text-2xl font-bold mb-4">Đăng ký thành viên</h2>
-            <p className="mb-4 text-sm text-gray-600">Nhận ưu đãi 20% cho đơn hàng đầu tiên của bạn!</p>
+            <h2 className="text-2xl font-bold mb-4">{t('popupTitle')}</h2>
+            <p className="mb-4 text-sm text-gray-600">{t('popupDescription')}</p>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <input
                 type="text"
                 name="name"
-                placeholder="Họ và tên"
+                placeholder={t('popupNamePlaceholder')}
                 value={formData.name}
                 onChange={handleInputChange}
                 className="border border-gray-300 px-4 py-2 rounded outline-none"
@@ -81,7 +84,7 @@ const AboutUs = () => {
               <input
                 type="email"
                 name="email"
-                placeholder="Email của bạn"
+                placeholder={t('popupEmailPlaceholder')}
                 value={formData.email}
                 onChange={handleInputChange}
                 className="border border-gray-300 px-4 py-2 rounded outline-none"
@@ -91,7 +94,7 @@ const AboutUs = () => {
                 type="submit"
                 className="bg-black text-white py-2 rounded hover:bg-gray-800 transition"
               >
-                Đăng ký ngay
+                {t('popupButton')}
               </button>
             </form>
           </div>

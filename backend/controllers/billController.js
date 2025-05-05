@@ -1,5 +1,6 @@
 const Bill = require('../models/Bill');
 const Order = require('../models/Order');
+const Product = require('../models/Product'); // Thêm dòng này
 
 const getTotalProfit = async (req, res) => {
   try {
@@ -9,45 +10,39 @@ const getTotalProfit = async (req, res) => {
     let totalRevenue = 0;
     let totalCost = 0;
 
-    // Tính tổng doanh thu và chi phí
-    bills.forEach((bill) => {
-      totalRevenue += bill.total;
-
-      bill.products.forEach((product) => {
-        const cost = product.cost || 0;
-        const quantity = product.quantity || 1;
-        totalCost += cost * quantity;
-      });
-    });
-
-    const profit = totalRevenue - totalCost;
-
-    // Tính lợi nhuận theo tháng (MOM) và năm (YOY)
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
     let profitMonth = 0;
     let profitYear = 0;
 
-    bills.forEach((bill) => {
+    for (const bill of bills) {
+      const billRevenue = bill.amount || 0;
+      totalRevenue += billRevenue;
+
+      let billCost = 0;
+
+      for (const item of bill.items) {
+        if (!item.productId) continue;
+
+        const product = await Product.findById(item.productId);
+        const cost = product?.cost || 0;
+        billCost += cost * item.quantity;
+      }
+
+      totalCost += billCost;
+      const billProfit = billRevenue - billCost;
+
       const createdAt = new Date(bill.createdAt);
-      let revenue = bill.total || 0;
-      let cost = 0;
-
-      bill.products.forEach((product) => {
-        cost += (product.cost || 0) * (product.quantity || 1);
-      });
-
-      const thisProfit = revenue - cost;
-
       if (createdAt.getFullYear() === currentYear) {
-        profitYear += thisProfit;
-
+        profitYear += billProfit;
         if (createdAt.getMonth() === currentMonth) {
-          profitMonth += thisProfit;
+          profitMonth += billProfit;
         }
       }
-    });
+    }
+
+    const profit = totalRevenue - totalCost;
 
     res.json({
       bills,

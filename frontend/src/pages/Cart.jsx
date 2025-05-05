@@ -19,11 +19,22 @@ const Cart = () => {
           const quantity = cartItems[itemId][key];
 
           if (quantity > 0) {
+            const product = products.find((p) => p._id === itemId);
+            const isOnSale = product?.flashSale?.isActive && product?.flashSale?.price < product?.price;
+            const originalPrice = product?.priceBeforeSale || product?.price;
+            const finalPrice = product?.flashSale?.isActive ? product.flashSale.price : originalPrice;
+
             tempData.push({
               _id: itemId,
               size,
               color,
               quantity,
+              finalPrice,
+              isOnSale: product?.flashSale?.isActive,
+              originalPrice,
+              discountPercent: product?.flashSale?.isActive
+                ? Math.round(((originalPrice - product.flashSale.price) / originalPrice) * 100)
+                : 0,
             });
           }
         }
@@ -34,14 +45,7 @@ const Cart = () => {
   }, [cartItems, products]);
 
   const getCartSubtotal = () => {
-    let total = 0;
-    for (const item of cartData) {
-      const product = products.find(p => p._id === item._id);
-      if (product) {
-        total += product.price * item.quantity;
-      }
-    }
-    return total;
+    return cartData.reduce((total, item) => total + item.finalPrice * item.quantity, 0);
   };
 
   const handleSizeChange = (itemId, newSize, quantity, color, oldSize, oldColor) => {
@@ -58,6 +62,8 @@ const Cart = () => {
         {cartData.map((item, index) => {
           const productData = products.find((product) => product._id === item._id);
           const availableSizes = productData?.sizes?.filter((s) => s.quantity > 0) || [];
+          const selectedSize = productData?.sizes?.find((s) => s.size === item.size);
+          const maxQuantity = selectedSize?.quantity || 1;
 
           return (
             <div
@@ -65,14 +71,23 @@ const Cart = () => {
               className="py-4 border-t border-b text-gray-700 grid grid-cols-[4fr_0.5fr_0.5fr] sm:grid-cols-[4fr_2fr_0.5fr] items-center gap-4"
             >
               <div className="flex items-start gap-6">
-                <img className="w-16 sm:w-20" src={productData?.image?.[0]} alt="" />
+                <img className="w-16 sm:w-20" src={productData?.image?.[0] || ''} alt={productData?.name || ''} />
                 <div>
                   <p className="text-xs sm:text-lg font-medium">{productData?.name || 'Unknown'}</p>
 
                   <div className="flex items-center gap-3 mt-2">
-                    <p>
-                      {currency}
-                      {productData?.price}
+                    <p className="flex items-center gap-2">
+                      {item.isOnSale ? (
+                        <>
+                          <span className="text-red-500 font-semibold">{currency}{item.finalPrice}</span>
+                          <span className="line-through text-gray-400 text-sm">{currency}{item.originalPrice}</span>
+                          <span className="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded font-medium">
+                            -{item.discountPercent}%
+                          </span>
+                        </>
+                      ) : (
+                        <span>{currency}{item.finalPrice}</span>
+                      )}
                     </p>
 
                     <select
@@ -99,15 +114,17 @@ const Cart = () => {
               </div>
 
               <input
-                onChange={(e) =>
-                  e.target.value === '' || e.target.value === '0'
-                    ? null
-                    : updateQuantity(item._id, item.size, Number(e.target.value), item.color, item.size, item.color)
-                }
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (!value || value <= 0) return;
+                  const validValue = Math.min(value, maxQuantity);
+                  updateQuantity(item._id, item.size, validValue, item.color, item.size, item.color);
+                }}
                 className="border max-w-10 sm:max-w-20 px-1 sm:px-2 py-1"
                 type="number"
                 min={1}
-                defaultValue={item.quantity}
+                max={maxQuantity}
+                value={Math.min(item.quantity, maxQuantity)}
               />
 
               <img
