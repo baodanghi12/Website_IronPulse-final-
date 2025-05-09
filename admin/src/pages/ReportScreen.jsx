@@ -5,7 +5,7 @@ import { VND } from '../utils/handleCurrency';
 import ProfitRevenueChart from '../components/ProfitRevenueChart';
 import axios from 'axios';
 import * as XLSX from 'xlsx'; // 👉 import thêm thư viện xuất Excel
-
+import ExcelExporter from '../components/ExcelExporter';
 const ReportScreen = () => {
   const [totalProfitDatas, setTotalProfitDatas] = useState({
     bills: 0,
@@ -15,10 +15,19 @@ const ReportScreen = () => {
     profitMOM: 0,
     profitYOY: 0,
   });
+  const [flashSaleData, setFlashSaleData] = useState([]);
   const [bestCategories, setBestCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [bestProducts, setBestProducts] = useState([]);
 
+  const getFlashSaleSummary = async () => {
+    try {
+      const res = await axios.get('/api/statistics/flashsale-report');
+      setFlashSaleData(res.data || []);
+    } catch (err) {
+      console.error('Error fetching flash sale summary:', err);
+    }
+  };
   const getTotalProfit = async () => {
     setLoading(true);
     try {
@@ -45,39 +54,29 @@ const ReportScreen = () => {
   // 🆕 Tự động fetch khi mở trang
   useEffect(() => {
     getTotalProfit();
+    getFlashSaleSummary();
   }, []);
 
-  // 🆕 Hàm xuất file Excel
-  const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet([
-      {
-        'Total Bills': totalProfitDatas.bills,
-        'Total Orders': totalProfitDatas.orders,
-        'Revenue': totalProfitDatas.revenue,
-        'Total Cost': totalProfitDatas.totalCost,
-        'Profit MOM': totalProfitDatas.profitMOM,
-        'Profit YOY': totalProfitDatas.profitYOY,
-      },
-    ]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
-    XLSX.writeFile(workbook, 'report.xlsx');
-  };
-
-  const CustomStatistic = ({ title, value }) => (
-    <div style={{ textAlign: 'center' }}>
+  
+  const CustomStatistic = ({ title, value, tooltip }) => (
+    <div style={{ textAlign: 'center' }} title={tooltip}>
       <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{value}</div>
       <div style={{ fontSize: '0.85rem', color: 'gray' }}>{title}</div>
     </div>
   );
+  
 
   return (
     <div style={{ padding: '1rem' }}>
       <div style={{ marginBottom: '1rem', textAlign: 'right' }}>
-        <Button type="primary" onClick={exportToExcel}>
-          📤 Xuất Excel
-        </Button>
-      </div>
+  <ExcelExporter
+    reportData={totalProfitDatas}
+    bestCategories={bestCategories}
+    bestProducts={bestProducts}
+    flashSaleData={flashSaleData} 
+  />
+</div>
+
 
       <div
         style={{
@@ -119,13 +118,17 @@ const ReportScreen = () => {
                   value={totalProfitDatas.orders.toLocaleString()}
                 />
                 <CustomStatistic
-                  title="Profit MOM"
-                  value={VND.format(totalProfitDatas.profitMOM)}
-                />
-                <CustomStatistic
-                  title="Profit YOY"
-                  value={VND.format(totalProfitDatas.profitYOY)}
-                />
+  title="Profit MOM"
+  value={(totalProfitDatas.profitMOM || 0).toFixed(1) + '%'}
+  tooltip={VND.format(totalProfitDatas.profitThisMonth || 0)}
+/>
+
+<CustomStatistic
+  title="Profit YOY"
+  value={(totalProfitDatas.profitYOY || 0).toFixed(1) + '%'}
+  tooltip={VND.format(totalProfitDatas.profitThisYear || 0)}
+/>
+
               </div>
             </>
           )}

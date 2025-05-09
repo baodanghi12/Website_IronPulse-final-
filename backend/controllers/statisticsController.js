@@ -2,7 +2,7 @@ import orderModel from '../models/orderModel.js';
 import moment from 'moment';
 import Import from '../models/importModel.js';
 import productModel from '../models/productModel.js';
-
+import flashSaleModel from '../models/flashSaleModel.js';
 export const getOrderStatistics = async (req, res) => {
   try {
     const { type } = req.query;
@@ -87,19 +87,38 @@ export const getOrderStatistics = async (req, res) => {
 
     const thisMonth = moment().month();
     const lastMonth = moment().subtract(1, 'month').month();
-    const profitThisMonth = orders.filter(order => moment(order.createdAt).month() === thisMonth)
-      .reduce((sum, order) => sum + (Number(order.amount) || 0), 0);
-    const profitLastMonth = orders.filter(order => moment(order.createdAt).month() === lastMonth)
-      .reduce((sum, order) => sum + (Number(order.amount) || 0), 0);
-    const profitMOM = profitLastMonth === 0 ? profitThisMonth : ((profitThisMonth - profitLastMonth) / profitLastMonth) * 100;
+    const ordersThisMonth = orders.filter(order => moment(order.createdAt).month() === thisMonth);
+const ordersLastMonth = orders.filter(order => moment(order.createdAt).month() === lastMonth);
+
+const profitThisMonth = ordersThisMonth.reduce((sum, order) => sum + (order.amount || 0), 0)
+  - imports.reduce((sum, imp) => moment(imp.createdAt).month() === thisMonth ? sum + (imp.totalCost || 0) : sum, 0);
+
+const profitLastMonth = ordersLastMonth.reduce((sum, order) => sum + (order.amount || 0), 0)
+  - imports.reduce((sum, imp) => moment(imp.createdAt).month() === lastMonth ? sum + (imp.totalCost || 0) : sum, 0);
+
+  let profitMOM = 0;
+if (profitLastMonth !== 0) {
+  profitMOM = ((profitThisMonth - profitLastMonth) / Math.abs(profitLastMonth)) * 100;
+
+  // Giới hạn trong khoảng -999% đến 999%
+  profitMOM = Math.max(Math.min(profitMOM, 999), -999);
+}
+
+
 
     const thisYear = moment().year();
     const lastYear = moment().subtract(1, 'year').year();
     const profitThisYear = orders.filter(order => moment(order.createdAt).year() === thisYear)
-      .reduce((sum, order) => sum + (Number(order.amount) || 0), 0);
-    const profitLastYear = orders.filter(order => moment(order.createdAt).year() === lastYear)
-      .reduce((sum, order) => sum + (Number(order.amount) || 0), 0);
-    const profitYOY = profitLastYear === 0 ? profitThisYear : ((profitThisYear - profitLastYear) / profitLastYear) * 100;
+  .reduce((sum, order) => sum + (order.amount || 0), 0)
+  - imports.reduce((sum, imp) => moment(imp.createdAt).year() === thisYear ? sum + (imp.totalCost || 0) : sum, 0);
+
+const profitLastYear = orders.filter(order => moment(order.createdAt).year() === lastYear)
+  .reduce((sum, order) => sum + (order.amount || 0), 0)
+  - imports.reduce((sum, imp) => moment(imp.createdAt).year() === lastYear ? sum + (imp.totalCost || 0) : sum, 0);
+
+const profitYOY = profitLastYear === 0
+  ? 0
+  : ((profitThisYear - profitLastYear) / Math.abs(profitLastYear)) * 100;
 
     const quantityInHand = products.reduce((total, product) => {
       const productQuantity = product.sizes.reduce((sum, size) => sum + (size.quantity || 0), 0);
@@ -162,6 +181,7 @@ export const getOrderStatistics = async (req, res) => {
                 turnOver: 0,
                 count: 0,
                 color: item.colors?.[0] || null,
+                price: item.price || 0, // ✅ Thêm dòng này
               };
             }
       
@@ -178,7 +198,10 @@ export const getOrderStatistics = async (req, res) => {
           productMap[key].remainingQuantity = matchedProduct.sizes.reduce((sum, size) => sum + (size.quantity || 0), 0);
         }
       }
-      
+      const totalTurnover = bestSellingCategories.reduce((sum, c) => sum + c.turnOver, 0);
+        bestSellingCategories.forEach(c => {
+        c.percentage = totalTurnover === 0 ? 0 : parseFloat(((c.turnOver / totalTurnover) * 100).toFixed(1));
+      });
       // Trả về top 5 sản phẩm bán chạy
       const bestSellingProducts = Object.values(productMap)
         .sort((a, b) => b.count - a.count)
@@ -187,7 +210,7 @@ export const getOrderStatistics = async (req, res) => {
           ...product,
           increaseBy: Math.floor(Math.random() * 100),
         }));
-
+        
     // === 4. Trả kết quả
     res.status(200).json({
       revenue,
@@ -209,5 +232,52 @@ export const getOrderStatistics = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+export const getFlashSaleReport = async (req, res) => {
+  try {
+    const activeFlashSale = await flashSaleModel.findOne({ isActive: true }).populate('products.productId');
+    if (!activeFlashSale) return res.status(404).json({ message: 'No active flash sale found' });
+
+    const orders = await orderModel.find({ status: 'Delivered', payment: true });
+
+    const flashSaleData = activeFlashSale.products.map((item) => {
+      const product = item.productId;
+      const name = product.name || 'Unknown';
+      const originalPrice = product.price || 0;
+      const salePrice = item.salePrice || 0;
+    
+      // ✅ Tính số lượng bán từ đơn hàng
+      let quantitySold = 0;
+      orders.forEach((order) => {
+        order.items.forEach((orderedItem) => {
+          if (
+            orderedItem.productId === product._id.toString() &&
+            Math.abs(orderedItem.price - salePrice) < 1
+          ) {
+            quantitySold += orderedItem.quantity || 0;
+          }
+        });
+      });
+    
+      return {
+        name,
+        originalPrice,
+        salePrice,
+        quantitySold,
+        saleRevenue: quantitySold * salePrice,
+        timeRange: `${moment(activeFlashSale.startTime).format('DD-MM')} đến ${moment(
+          activeFlashSale.endTime
+        ).format('DD-MM')}`,
+      };
+    });
+    
+
+    res.json(flashSaleData);
+  } catch (err) {
+    console.error('❌ Error in getFlashSaleReport:', err);
+    res.status(500).json({ message: 'Internal Server Error', error: err.message });
+  }
+};
+
 
 

@@ -1,6 +1,5 @@
 import flashSaleModel from "../models/flashSaleModel.js";
-
-
+import mongoose from "mongoose"; 
 
 export const createFlashSale = async (req, res) => {
   try {
@@ -15,7 +14,7 @@ export const createFlashSale = async (req, res) => {
           p.discountPercent >= 0
       )
       .map((p) => ({
-        productId: p.productId,
+        productId: new mongoose.Types.ObjectId(p.productId), // ✅ ép kiểu ObjectId
         salePrice: p.salePrice,
         discountPercent: p.discountPercent,
       }));
@@ -27,8 +26,6 @@ export const createFlashSale = async (req, res) => {
       });
     }
 
-    const now = new Date();
-
     const existing = await flashSaleModel.findOne({
       isActive: true,
       startTime: { $lte: new Date(endTime) },
@@ -36,19 +33,15 @@ export const createFlashSale = async (req, res) => {
     });
 
     if (existing) {
-      
-
       cleanProducts.forEach((newItem) => {
         const existingItem = existing.products.find(
           (p) => p.productId.toString() === newItem.productId.toString()
         );
 
         if (existingItem) {
-          // ✅ Update giá và phần trăm nếu đã có
           existingItem.salePrice = newItem.salePrice;
           existingItem.discountPercent = newItem.discountPercent;
         } else {
-          // ✅ Thêm mới nếu chưa có
           existing.products.push(newItem);
         }
       });
@@ -56,7 +49,6 @@ export const createFlashSale = async (req, res) => {
       await existing.save();
       return res.json({ success: true, message: "Flash Sale updated." });
     } else {
-      // ✅ Tạo Flash Sale mới
       const flashSale = await flashSaleModel.create({
         title,
         startTime,
@@ -69,13 +61,9 @@ export const createFlashSale = async (req, res) => {
     }
   } catch (err) {
     console.error("❌ Flash Sale Create Error:", err);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error: " + err.message });
+    res.status(500).json({ success: false, message: "Server error: " + err.message });
   }
 };
-
-
 export const getActiveFlashSale = async (req, res) => {
   try {
     const now = new Date();
@@ -89,20 +77,23 @@ export const getActiveFlashSale = async (req, res) => {
       return res.json({ success: true, products: [] });
     }
 
-    const enrichedProducts = sale.products.map((item) => {
-      const p = item.productId;
-      return {
-        _id: p._id,
-        name: p.name,
-        image: p.image,
-        category: p.category,
-        price: item.salePrice,
-        priceBeforeSale: p.price,
-        discountPercent: item.discountPercent,
-        sizes: p.sizes,
-        isFlashSale: true, // ✅ để đánh dấu rõ ràng
-      };
-    });
+
+    const enrichedProducts = sale.products
+      .filter(item => item.productId) // để tránh lỗi populate null
+      .map((item) => {
+        const p = item.productId;
+        return {
+          _id: p._id,
+          name: p.name,
+          image: p.image,
+          category: p.category,
+          price: item.salePrice,
+          priceBeforeSale: p.price,
+          discountPercent: item.discountPercent,
+          sizes: p.sizes,
+          isFlashSale: true,
+        };
+      });
 
     res.json({
       success: true,
@@ -116,7 +107,6 @@ export const getActiveFlashSale = async (req, res) => {
   }
 };
 
-  
 
 // ✅ Bật / tắt flash sale
 export const toggleFlashSaleStatus = async (req, res) => {
@@ -156,7 +146,15 @@ export const removeProductFromSale = async (req, res) => {
   // Xoá toàn bộ flash sale
   export const clearAllFlashSale = async (req, res) => {
     try {
-      await flashSaleModel.deleteMany({ isActive: true });
+      await flashSaleModel.updateMany(
+        { isActive: true },
+        {
+          $set: {
+            products: [],
+            isActive: false, // ✅ không còn hiệu lực để hiển thị
+          },
+        }
+      );
       res.json({ success: true, message: 'All flash sale entries removed' });
     } catch (err) {
       res.status(500).json({ success: false, message: err.message });

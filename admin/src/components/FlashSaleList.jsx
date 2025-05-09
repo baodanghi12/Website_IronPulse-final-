@@ -65,29 +65,35 @@ const FlashSaleList = ({ allProducts, token, onSuccess }) => {
   // ⏰ Countdown
   useEffect(() => {
     console.log("🔎 saleTime for countdown:", saleTime);
-    if (saleTime?.endTime instanceof Date && !isNaN(saleTime.endTime)) {
+  
+    if (
+      saleTime?.endTime instanceof Date &&
+      !isNaN(saleTime.endTime) &&
+      saleProducts.length > 0 // ✅ thêm điều kiện này
+    ) {
       const interval = setInterval(() => {
         const now = new Date();
         const diff = Math.max(0, saleTime.endTime - now);
-
+  
         if (diff === 0) {
           setRemainingTime(null);
           clearInterval(interval);
           return;
         }
-
+  
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff / (1000 * 60)) % 60);
         const seconds = Math.floor((diff / 1000) % 60);
-
+  
         setRemainingTime({ hours, minutes, seconds });
       }, 1000);
-
+  
       return () => clearInterval(interval);
     } else {
-      setRemainingTime(null);
+      setRemainingTime(null); // ✅ không có sản phẩm thì không đếm
     }
-  }, [saleTime]);
+  }, [saleTime, saleProducts]);
+  
 
   const removeProductFromSale = async (productId) => {
     try {
@@ -103,24 +109,31 @@ const FlashSaleList = ({ allProducts, token, onSuccess }) => {
   const clearFlashSale = async () => {
     if (!window.confirm("Are you sure you want to remove all flash sale items?")) return;
     try {
-      await axios.delete('/api/flashsale/clear', {
+      const res = await axios.delete('/api/flashsale/clear', {
         headers: { token },
       });
-      fetchFlashSale();
+  
+      if (res.data.success) {
+        toast.success('🎉 All flash sale items cleared');
+        fetchFlashSale(); // ✅ reload danh sách
+      } else {
+        toast.error(res.data.message || 'Clear failed');
+      }
     } catch (err) {
-      alert('Failed to clear flash sale');
+      console.error('❌ Clear flash sale error:', err);
+      toast.error('Failed to clear flash sale');
     }
   };
+  
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <h2 className="text-lg font-semibold text-gray-800">Flash Sale Products</h2>
-          {saleTime?.endTime && (
+          {saleTime?.endTime && saleProducts.length > 0 && (
   <span className="text-sm text-red-600 font-semibold">
-    ⏰{" "}
-    {remainingTime
+    ⏰ {remainingTime
       ? `${remainingTime.hours}h ${remainingTime.minutes}m ${remainingTime.seconds}s`
       : "⏳ Flash Sale đang diễn ra"}
   </span>

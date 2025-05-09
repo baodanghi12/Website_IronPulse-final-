@@ -126,7 +126,7 @@ const TopSellingAndLowQuantityStatistic = () => {
             <Spin />
           </div>
         ) : (
-          lowQuantityProducts.map((product) => {
+          lowQuantityProducts.slice(0, 3).map((product) => {
             const quantity = product.countInStock ?? product.sizes?.reduce((sum, s) => sum + s.quantity, 0);
             const isLowQuantity = quantity < 10;
 

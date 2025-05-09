@@ -16,10 +16,13 @@ const CustomTooltip = ({ active, payload, label }) => {
       <div style={{ background: '#fff', padding: '10px', borderRadius: 8, boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
         <div style={{ fontSize: 12, color: '#999' }}>Sales</div>
         <div style={{ fontSize: 18, fontWeight: 600, color: '#2c3e50' }}>{formatCurrency(revenue)}</div>
-        <div style={{ fontSize: 12, color: '#666' }}>Profit: {formatCurrency(profit)}</div>
+        <div style={{ fontSize: 12, color: profit < 0 ? 'red' : '#666' }}>
+          Profit: {formatCurrency(profit)}
+        </div>
+
         <div style={{ fontSize: 12, color: '#ccc' }}>{label}</div>
       </div>
-    );
+    )
   }
   return null;
 };
