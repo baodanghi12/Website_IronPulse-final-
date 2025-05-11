@@ -7,6 +7,10 @@ import { DatePicker, Select, Button, Space } from 'antd';
 import { VND } from '../utils/handleCurrency';
 import dayjs from 'dayjs';
 import { FaBoxOpen, FaClipboardList, FaTruck, FaMotorcycle } from 'react-icons/fa'; 
+import { useLocation } from 'react-router-dom';
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
 const { RangePicker } = DatePicker;
 const statusIcons = {
   'Order Placed': <FaClipboardList className="text-lg" />,
@@ -15,6 +19,8 @@ const statusIcons = {
   'Out for delivery': <FaMotorcycle className="text-lg" />,
 };
 const Orders = ({ token }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [activeTab, setActiveTab] = useState('customer');
@@ -71,16 +77,32 @@ const Orders = ({ token }) => {
     }
   };
 
-  useEffect(() => {
-    fetchAllOrders();
-  }, [token]);
+ const query = useQuery();
 
-  useEffect(() => {
-    if (selectedOrder) {
-      setOrderStatus(selectedOrder.status || '');
-      setPaymentStatus(selectedOrder.payment ? 'Done' : 'Pending');
+useEffect(() => {
+  fetchAllOrders();
+}, [token]);
+
+useEffect(() => {
+  if (selectedOrder) {
+    setOrderStatus(selectedOrder.status || '');
+    setPaymentStatus(selectedOrder.payment ? 'Done' : 'Pending');
+  }
+}, [selectedOrder]);
+
+// ✅ Load đơn hàng nếu có id từ query
+useEffect(() => {
+  const idFromQuery = query.get('id');
+  if (idFromQuery && orders.length > 0) {
+    const match = orders.find(order => order._id === idFromQuery);
+    if (match) {
+      setSelectedOrder(match);
+    } else {
+      toast.warning('Order not found.');
     }
-  }, [selectedOrder]);
+  }
+}, [orders]);
+
   const handlePrintOrder = (order) => {
     const logoUrl = 'https://yourdomain.com/logo.png'; // thay bằng logo thật
     const storeName = 'IRON PULSE - Fashion Store';
@@ -115,10 +137,10 @@ const Orders = ({ token }) => {
           <p><strong>Địa chỉ:</strong> ${order.address?.street}, ${order.address?.city}, ${order.address?.state}, ${order.address?.country}, ${order.address?.zipcode}</p>
           <p><strong>Ngày tạo:</strong> ${order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A'}</p>
           <p><strong>Payment Method:</strong> ${
-  order.paymentMethod === 'COD'
-    ? `<img src="${assets.cod_icon}" alt="cod" style="width:16px;height:16px;vertical-align:middle;margin-right:5px;" /> Cash on Delivery`
-    : `<span style="color:green;font-weight:bold;">Paid Online</span>`
-}</p>
+          order.paymentMethod === 'COD'
+            ? `<img src="${assets.cod_icon}" alt="cod" style="width:16px;height:16px;vertical-align:middle;margin-right:5px;" /> Cash on Delivery`
+            : `<span style="color:green;font-weight:bold;">Paid Online</span>`
+        }</p>
 
 
           <p><strong>Ghi chú:</strong> ${order.note || 'Không có ghi chú.'}</p>
@@ -177,6 +199,8 @@ const Orders = ({ token }) => {
   
     return inStatus && inDateRange;
   });
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <div>
       <h3 className="text-xl font-semibold mb-4">Order Page</h3>
@@ -218,71 +242,88 @@ const Orders = ({ token }) => {
 
 
       {/* Danh sách đơn hàng */}
-      {filteredOrders.length === 0 ? (
-        <p className='text-gray-500 italic'>No orders found.</p>
-      ) : (
-        <table className='min-w-full table-auto'>
-          <thead className='bg-gray-100'>
-            <tr>
-              <th className='px-4 py-2 text-left'>ID</th>
-              <th className='px-4 py-2 text-left'>Name</th>
-              <th className='px-4 py-2 text-left'>Address</th>
-              <th className='px-4 py-2 text-left'>Create At</th>
-              <th className='px-4 py-2 text-left'>Quantity</th>
-              <th className='px-4 py-2 text-left'>Total Price</th>
-              <th className='px-4 py-2 text-left'>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.map((order) => (
-              <tr
-                key={order._id}
-                className='border-t cursor-pointer hover:bg-gray-50'
-                onClick={() => setSelectedOrder(order)}
-              >
-                <td className='px-4 py-2'>
-                  <span
-                    style={{
-                      border: '1px solid #339AF0',
-                      borderRadius: '4px',
-                      padding: '1px 3px',
-                      color: '#339AF0',
-                      display: 'inline-block',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    #{order._id.slice(-6).toUpperCase()}
-                  </span>
-                </td>
-                <td className='px-4 py-2'>{`${order.address?.firstName || order.address?.name || 'No name'}`}</td>
-                <td className='px-4 py-2'>
-                  {`${order.address?.street}, ${order.address?.city}, ${order.address?.state}`}
-                </td>
-                <td className='px-4 py-2'>{order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A'}</td>
-                <td className='px-4 py-2'>{order.items?.reduce((total, item) => total + item.quantity, 0)}</td>
-                <td className='px-4 py-2'>{VND.format(order.amount)}</td>
-                <td className='px-4 py-2'>
-                  <span
-                    className={`px-2 py-1 rounded text-white ${
-                      order.status === 'Delivered'
-                        ? 'bg-green-500'
-                        : order.status === 'Shipped'
-                        ? 'bg-blue-500'
-                        : order.status === 'Packing'
-                        ? 'bg-yellow-500'
-                        : order.status === 'Out for delivery'
-                        ? 'bg-orange-500' 
-                        : 'bg-gray-500'
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+{filteredOrders.length === 0 ? (
+  <p className='text-gray-500 italic'>No orders found.</p>
+) : (
+  <div className="overflow-x-auto">
+    <table className="min-w-full table-auto border border-gray-200 shadow-sm rounded-md">
+      <thead className="bg-gray-50 text-gray-700 text-sm">
+        <tr>
+          <th className="px-4 py-2 text-left">ID</th>
+          <th className="px-4 py-2 text-left">Name</th>
+          <th className="px-4 py-2 text-left">Address</th>
+          <th className="px-4 py-2 text-left">Create At</th>
+          <th className="px-4 py-2 text-left">Quantity</th>
+          <th className="px-4 py-2 text-left">Total Price</th>
+          <th className="px-4 py-2 text-left">Status</th>
+        </tr>
+      </thead>
+      <tbody className="text-sm text-gray-800">
+        {paginatedOrders.map((order) => (
+          <tr
+            key={order._id}
+            className="border-t hover:bg-gray-50 cursor-pointer"
+            onClick={() => setSelectedOrder(order)}
+          >
+            <td className="px-4 py-2 font-semibold text-blue-600">#{order._id.slice(-6).toUpperCase()}</td>
+            <td className="px-4 py-2">{order.address?.firstName || order.address?.name || 'No name'}</td>
+            <td className="px-4 py-2">
+              {`${order.address?.street}, ${order.address?.city}, ${order.address?.state}`}
+            </td>
+            <td className="px-4 py-2">{order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A'}</td>
+            <td className="px-4 py-2">
+              {order.items?.reduce((total, item) => total + item.quantity, 0)}
+            </td>
+            <td className="px-4 py-2">{VND.format(order.amount)}</td>
+            <td className="px-4 py-2">
+  <span
+    className={`px-2 py-1 rounded text-white text-sm whitespace-nowrap ${
+      order.status === 'Delivered'
+        ? 'bg-green-500'
+        : order.status === 'Shipped'
+        ? 'bg-blue-500'
+        : order.status === 'Packing'
+        ? 'bg-yellow-500'
+        : order.status === 'Out for delivery'
+        ? 'bg-orange-500'
+        : 'bg-gray-500'
+    }`}
+  >
+    {order.status}
+  </span>
+</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+
+      {/* Phân trang */}
+<div className="flex justify-between items-center mt-4">
+  <div className="text-sm text-gray-600">
+  Showing {(currentPage - 1) * pageSize + 1} -{' '}
+  {Math.min(currentPage * pageSize, filteredOrders.length)} of{' '}
+  {filteredOrders.length} orders
+</div>
+  <div className="flex gap-2 items-center">
+    <Button
+  disabled={currentPage === 1}
+  onClick={() => setCurrentPage((prev) => prev - 1)}
+>
+  ⬅ Previous
+</Button>
+<span>
+  Page {currentPage} / {Math.ceil(filteredOrders.length / pageSize)}
+</span>
+<Button
+  disabled={currentPage === Math.ceil(filteredOrders.length / pageSize)}
+  onClick={() => setCurrentPage((prev) => prev + 1)}
+>
+  Next ➡
+</Button>
+  </div>
+</div>
 
       {/* Popup Order Detail */}
       {selectedOrder && (
@@ -414,7 +455,6 @@ const Orders = ({ token }) => {
         { headers: { token } }
       );
       if (response.data.success) {
-        toast.success('Status updated successfully');
         fetchAllOrders(); // Refresh order list
         setSelectedOrder(null); // Close popup
       } else {

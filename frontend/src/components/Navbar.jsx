@@ -93,6 +93,8 @@ const Navbar = () => {
       {t('sale40')}
       </NavLink>
 
+      
+
       <div className='flex items-center gap-8'>
         <img onClick={() => setShowSearch(true)} src={assets.search_icon} className='w-5 cursor-pointer' alt="Search" />
         <Link to='/wishlist' className='relative'>
@@ -115,6 +117,8 @@ const Navbar = () => {
                   <Link to='/profile' className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded'><span className='material-icons text-gray-600'>person</span>{t('myaccount')}</Link>
                   <Link to='/orders' className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded'><span className='material-icons text-gray-600'>assignment</span>{t('orders')}</Link>
                   <Link to='/wishlist' className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded'><span className='material-icons text-gray-600'>favorite</span>{t('favorite')}</Link>
+                  <Link to='/promotions' className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded'>
+            <span className='material-icons text-gray-600'>card_giftcard</span>{t('promotions')}</Link>
                   <p onClick={() => { setUserInfo(null); setToken(null); localStorage.removeItem('token'); }} className='flex items-center gap-2 py-2 hover:bg-gray-100 px-2 rounded cursor-pointer'><span className='material-icons text-gray-600'>logout</span>{t('logout')}</p>
                 </div>
               )}

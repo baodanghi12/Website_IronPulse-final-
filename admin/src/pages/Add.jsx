@@ -78,162 +78,159 @@ const Add = ({ token }) => {
   };
 
   return (
-    <form onSubmit={onSubmitHandler} className='flex flex-col w-full items-start gap-3'>
-      {/* Upload ảnh */}
-      <div>
-        <p className='mb-2'>Upload Image</p>
-        <div className='flex gap-2'>
-          {[image1, image2, image3, image4].map((img, idx) => (
-            <label key={idx} htmlFor={`image${idx + 1}`}>
-              <img className='w-20' src={!img ? assets.upload_area : URL.createObjectURL(img)} alt="" />
-              <input
-                onChange={(e) => {
-                  const setFn = [setImage1, setImage2, setImage3, setImage4][idx];
-                  setFn(e.target.files[0]);
-                }}
-                type="file"
-                id={`image${idx + 1}`}
-                hidden
-              />
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Tên sản phẩm */}
-      <div className='w-full'>
-        <p className='mb-2'>Product name</p>
-        <input
-          onChange={(e) => setName(e.target.value)}
-          value={name}
-          className='w-full max-w-[500px] px-3 py-2'
-          type="text"
-          placeholder='Type here'
-          required
-        />
-      </div>
-
-      {/* Mô tả */}
-      <div className='w-full'>
-        <p className='mb-2'>Product description</p>
-        <textarea
-          onChange={(e) => setDescription(e.target.value)}
-          value={description}
-          className='w-full max-w-[500px] px-3 py-2'
-          placeholder='Write content here'
-          required
-        />
-      </div>
-
-      {/* Danh mục, phụ danh mục, giá */}
-      <div className='flex flex-col sm:flex-row gap-2 w-full sm:gap-8'>
-        <div>
-          <p className='mb-2'>Product category</p>
-          <select
-            onChange={(e) => setCategory(e.target.value)}
-            className='w-full px-3 py-2'>
-            <option value="Men">Men</option>
-            <option value="Women">Women</option>
-            <option value="Kids">Kids</option>
-          </select>
-        </div>
-        <div>
-          <p className='mb-2'>Sub category</p>
-          <select
-            onChange={(e) => setSubCategory(e.target.value)}
-            className='w-full px-3 py-2'>
-            <option value="Topwear">Topwear</option>
-            <option value="Bottomwear">Bottomwear</option>
-            <option value="Winterwear">Winterwear</option>
-          </select>
-        </div>
-        <div>
-          <p className='mb-2'>Product Price</p>
+  <form
+  onSubmit={onSubmitHandler}
+  className="w-full max-w-6xl mx-auto bg-white rounded-lg shadow border text-sm px-6 py-4"
+  style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.7fr', gap: '2rem', alignItems: 'start', maxHeight: 'calc(100vh - 40px)', overflowY: 'auto' }}
+>
+  {/* Image Upload - bên trái */}
+  <div className="space-y-2">
+    <h2 className="text-base font-semibold text-gray-800">Upload Images</h2>
+    <div className="grid grid-cols-2 gap-2">
+      {[image1, image2, image3, image4].map((img, idx) => (
+        <label key={idx} htmlFor={`image${idx + 1}`} className="cursor-pointer">
+          <img
+            className="w-full aspect-square object-cover border rounded"
+            src={!img ? assets.upload_area : URL.createObjectURL(img)}
+            alt=""
+          />
           <input
-            onChange={(e) => setPrice(e.target.value)}
-            value={price}
-            className='w-full px-3 py-2 sm:w-[120px]'
-            type="number"
-            placeholder='25'
+            type="file"
+            id={`image${idx + 1}`}
+            hidden
+            onChange={(e) => {
+              const setFn = [setImage1, setImage2, setImage3, setImage4][idx];
+              setFn(e.target.files[0]);
+            }}
           />
-        </div>
-      </div>
-
-      {/* Size chọn dạng Select đẹp */}
-      <div className='w-full'>
-        <p className='mb-2'>Chọn size</p>
-        <Select
-          mode="multiple"
-          allowClear
-          style={{ width: '100%' }}
-          placeholder="Chọn size cho sản phẩm"
-          value={selectedSizes}
-          onChange={(value) => setSelectedSizes(value)}
-        >
-          {sizeOptions.map((size) => (
-            <Option key={size} value={size}>
-              {size}
-            </Option>
-          ))}
-        </Select>
-      </div>
-          {/* Chọn màu */}
-{/* Chọn màu */}
-<div className='w-full mt-4'>
-  <p className='mb-2'>Chọn màu</p>
-  <div className='flex items-center gap-4'>
-    <input
-      type="color"
-      value={newColor}
-      onChange={(e) => setNewColor(e.target.value)}
-      className='w-10 h-10 p-0 border rounded-md'
-    />
-    <button
-      type="button"
-      onClick={() => setColors([newColor])} // 👈 chỉ cho 1 màu duy nhất
-      className='px-4 py-2 bg-black text-white rounded-md'
-    >
-      Chọn màu
-    </button>
-  </div>
-
-  {/* Hiển thị màu đã chọn */}
-  {colors.length > 0 && (
-    <div className='flex items-center gap-4 mt-4'>
-      {colors.map((color, index) => (
-        <div key={index} className="relative">
-          <div
-            className='w-10 h-10 rounded-full border shadow-md'
-            style={{ backgroundColor: color }}
-          />
-          <button
-            type="button"
-            onClick={() => setColors([])} // 👈 bấm là xóa màu luôn
-            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
-          >
-            ×
-          </button>
-        </div>
+        </label>
       ))}
     </div>
-  )}
-</div>
+  </div>
 
-      {/* Best seller */}
-      <div className='flex gap-2 mt-2'>
-  <input
-    onChange={() => setNewArrival(prev => !prev)}
-    checked={newArrival}
-    type="checkbox"
-    id='newArrival'
-  />
-  <label className='cursor-pointer' htmlFor="newArrival">Add to New Arrival</label>
-</div>
+  {/* Form nhập thông tin */}
+  <div className="grid grid-cols-2 gap-4">
+    <div className="col-span-2">
+      <label className="block text-xs font-semibold mb-1">Product Name</label>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="w-full px-3 py-2 border rounded"
+        required
+      />
+    </div>
 
+    <div>
+      <label className="block text-xs font-semibold mb-1">Price (VND)</label>
+      <input
+        type="number"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        className="w-full px-3 py-2 border rounded"
+      />
+    </div>
 
-      <button type='submit' className='w-28 py-3 mt-4 bg-black text-white'>ADD</button>
-    </form>
-  );
+    <div className="flex items-center mt-6 gap-2">
+      <input
+        type="checkbox"
+        id="newArrival"
+        checked={newArrival}
+        onChange={() => setNewArrival(prev => !prev)}
+      />
+      <label htmlFor="newArrival" className="text-sm">New Arrival</label>
+    </div>
+
+    <div>
+      <label className="block text-xs font-semibold mb-1">Category</label>
+      <select
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        className="w-full px-3 py-2 border rounded"
+      >
+        <option>Men</option>
+        <option>Women</option>
+        <option>Kids</option>
+      </select>
+    </div>
+
+    <div>
+      <label className="block text-xs font-semibold mb-1">Sub Category</label>
+      <select
+        value={subCategory}
+        onChange={(e) => setSubCategory(e.target.value)}
+        className="w-full px-3 py-2 border rounded"
+      >
+        <option>Topwear</option>
+        <option>Bottomwear</option>
+        <option>Winterwear</option>
+      </select>
+    </div>
+
+    <div className="col-span-2">
+      <label className="block text-xs font-semibold mb-1">Select Sizes</label>
+      <Select
+        mode="multiple"
+        allowClear
+        style={{ width: '100%' }}
+        value={selectedSizes}
+        onChange={setSelectedSizes}
+        size="small"
+        placeholder="Select available sizes"
+      >
+        {sizeOptions.map(size => (
+          <Option key={size} value={size}>{size}</Option>
+        ))}
+      </Select>
+    </div>
+
+    <div className="col-span-2">
+      <label className="block text-xs font-semibold mb-1">Color</label>
+      <div className="flex items-center gap-3 mt-1">
+        <input
+          type="color"
+          value={newColor}
+          onChange={(e) => setNewColor(e.target.value)}
+          className="w-8 h-8 border rounded"
+        />
+        <button
+          type="button"
+          onClick={() => setColors([newColor])}
+          className="px-3 py-1 bg-black text-white text-xs rounded"
+        >
+          Set
+        </button>
+        {colors.length > 0 && (
+          <div
+            className="w-6 h-6 rounded-full border"
+            style={{ backgroundColor: colors[0] }}
+          />
+        )}
+      </div>
+    </div>
+
+    <div className="col-span-2">
+      <label className="block text-xs font-semibold mb-1">Description</label>
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        rows={2}
+        className="w-full px-3 py-2 border rounded"
+      />
+    </div>
+
+    <div className="col-span-2 mt-2">
+      <button
+        type="submit"
+        className="w-full bg-black text-white py-2 rounded font-semibold hover:bg-gray-900"
+      >
+        ADD PRODUCT
+      </button>
+    </div>
+  </div>
+</form>
+
+);
 };
 
 export default Add;

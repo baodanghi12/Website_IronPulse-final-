@@ -2,17 +2,16 @@ import { v2 as cloudinary } from "cloudinary";
 import productModel from "../models/productModel.js"
 import Import from '../models/importModel.js';
 import Order from '../models/orderModel.js'
+import Notification from '../models/notificationModel.js';
 //function for add new qunatity product
 const importProduct = async (req, res) => {
     try {
         const { productId, quantity } = req.body;
-
         // Kiểm tra sản phẩm có tồn tại không
         const product = await productModel.findById(productId);
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
-
         // Cập nhật số lượng cho sản phẩm (thêm số lượng mới vào hiện tại)
         product.quantity = (product.quantity || 0) + Number(quantity); // Nếu chưa có quantity thì gán bằng 0
         await product.save();
@@ -65,7 +64,13 @@ const addProduct = async (req, res) => {
 
     const product = new productModel(productData);
     await product.save();
-
+    await Notification.create({
+      type: 'success',
+      title: `Sản phẩm mới: ${product.name}`,
+      content: `Danh mục: ${product.category} / ${product.subCategory}`,
+      isRead: false,
+      link: '/admin/list', // hoặc `/admin/products/${product._id}` nếu bạn có màn chi tiết sản phẩm
+    });
     res.json({ success: true, message: "Product added successfully" });
   } catch (error) {
     console.log(error);
@@ -113,22 +118,31 @@ const listProducts = async (req, res) => {
   }
 };
 // function for remove product
-const removeProduct =async (req, res) => {
-    try {
-        
-        await productModel.findByIdAndDelete(req.body.id)
-        res.json({success: true, message: "Product removed successfully"})
-        // await createNotification({
-        //     title: `🗑 Sản phẩm "${deletedProduct.name}" đã bị xóa`,
-        //     link: '/admin/products',
-        //   });
-          
+const removeProduct = async (req, res) => {
+  try {
+    const deletedProduct = await productModel.findById(req.body.id);
 
-    } catch (error) {
-        console.log(error)
-        res.json({success: false, message: error.message})
+    if (!deletedProduct) {
+      return res.status(404).json({ success: false, message: "Product not found" });
     }
-}
+
+    await productModel.findByIdAndDelete(req.body.id);
+
+    // 🔔 Tạo thông báo
+    await Notification.create({
+      type: 'success',
+      title: `Sản phẩm "${deletedProduct.name}" đã bị xóa`,
+      content: `Danh mục: ${deletedProduct.category} / ${deletedProduct.subCategory}`,
+      isRead: false,
+      link: '/admin/list',
+    });
+
+    res.json({ success: true, message: "Product removed successfully" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
 
 // function for single product info
 const singleProduct = async (req, res) => {
@@ -257,11 +271,13 @@ const editProduct = async (req, res) => {
                 message: 'Product not found for update',
             });
         }
-        // await createNotification({
-        //     title: `✏️ Sản phẩm #${updatedProduct._id.toString().slice(-6)} đã được cập nhật`,
-        //     link: '/admin/products',
-        //   });
-        // Thành công
+        await Notification.create({
+          type: 'success',
+          title: `Đã cập nhật sản phẩm: ${updatedProduct.name}`,
+          content: `Danh mục: ${updatedProduct.category} / ${updatedProduct.subCategory}`,
+          isRead: false,
+          link: '/admin/list',
+        });
         return res.status(200).json({
             success: true,
             message: 'Product updated successfully',

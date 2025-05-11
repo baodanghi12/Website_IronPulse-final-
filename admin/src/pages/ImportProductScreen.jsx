@@ -18,6 +18,7 @@ import {
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { VND } from '../utils/handleCurrency';
+import ImportDetailPopup from '../components/ImportDetailPopup';
 
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -32,6 +33,7 @@ const ImportProductScreen = () => {
   const [costs, setCosts] = useState({}); // Keep track of cost for each selected product
   const [totalCost, setTotalCost] = useState(0); // Store total cost
   const [form] = Form.useForm();
+  const [selectedImport, setSelectedImport] = useState(null);
   // Load import data
   const fetchImportData = async () => {
     try {
@@ -217,6 +219,15 @@ const ImportProductScreen = () => {
                   key: 'note',
                   render: (value) => value ? value : '(null)',
                 },
+                {
+  title: 'Action',
+  key: 'action',
+  render: (_, record) => (
+    <Button type="link" onClick={() => setSelectedImport(record)}>
+      View Details
+    </Button>
+  ),
+}
               ]}
               rowKey="_id"
               pagination={{ pageSize: 5 }}
@@ -329,6 +340,10 @@ const ImportProductScreen = () => {
           </TabPane>
         </Tabs>
       </Card>
+      <ImportDetailPopup
+  importRecord={selectedImport}
+  onClose={() => setSelectedImport(null)}
+/>
     </div>
   );
 };

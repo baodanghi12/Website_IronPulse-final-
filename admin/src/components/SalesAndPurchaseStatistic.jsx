@@ -54,7 +54,7 @@ const SalesAndPurchaseStatistic = () => {
   useEffect(() => {
     const fetchChartData = async () => {
       try {
-        const res = await axios.get(`/api/statistics/orders?type=${timeTypeSelected}`);
+        const res = await axios.get(`/api/statistics/chart?type=${timeTypeSelected}`);
         setChartData({
           labels: res.data.labels || [],
           sales: res.data.sales || [],

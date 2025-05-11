@@ -55,7 +55,7 @@ import WishlistPage from './pages/WishlistPage';
 import Chatbot from './pages/Chatbot'
 import ForgetPassword from './pages/ForgetPassword'
 import ProfilePage from './pages/ProfilePage';
-
+import PromotionsPage from './pages/PromotionsPage';
 const App = () => {
   return (
     <div className='w-full'>
@@ -114,7 +114,7 @@ const App = () => {
         <Route path='/wishlist' element={<WishlistPage />} />
         <Route path='/forgot-password' element={<ForgetPassword/>} />
         <Route path='/profile' element={<ProfilePage />} />
-
+        <Route path="/promotions" element={<PromotionsPage />} />
         </Routes>
         <Chatbot/>
       <AboutUs /> 

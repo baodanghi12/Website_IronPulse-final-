@@ -16,6 +16,8 @@ const List = ({ token }) => {
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
   const [allProducts, setAllProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const [inventoryStats, setInventoryStats] = useState({
     totalCategories: 0,
     totalProducts: 0,
@@ -33,7 +35,7 @@ const List = ({ token }) => {
       const response = await axios.get(backendUrl + "/api/product/list");
       if (response.data.success) {
         const products = response.data.products;
-        console.log("📦 First product:", products[0]);
+        
         setList(products);
   
         // ✅ Tính toán Inventory Overview
@@ -129,20 +131,24 @@ const topSellingRevenue = products
     const matchSubCategory = selectedSubCategory ? item.subCategory === selectedSubCategory : true;
     return matchSearch && matchCategory && matchSubCategory;
   });
+  const totalPages = Math.ceil(filteredList.length / pageSize);
+  const paginatedList = filteredList.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   
   
   // Nếu sortBy=lowStock thì sắp xếp số lượng tăng dần
   if (sortBy === 'lowStock') {
-    filteredList = filteredList.sort((a, b) => {
-      const getQty = (product) => {
-        if (Array.isArray(product.sizes)) {
-          return product.sizes.reduce((sum, size) => sum + size.quantity, 0);
-        }
-        return product.countInStock ?? 0;
-      };
-      return getQty(a) - getQty(b);
-    });
-  }
+  filteredList = filteredList.sort((a, b) => {
+    const getQty = (product) => {
+      if (Array.isArray(product.sizes)) {
+        return product.sizes.reduce((sum, size) => sum + size.quantity, 0);
+      }
+      return product.countInStock ?? 0;
+    };
+    return getQty(a) - getQty(b);
+  });
+} else if (sortBy === 'topSelling') {
+  filteredList = filteredList.sort((a, b) => (b.totalSold || 0) - (a.totalSold || 0));
+}
 
   return (
     <>
@@ -246,7 +252,7 @@ const topSellingRevenue = products
 
       {/* Product List */}
       <div className="flex flex-col gap-3 mt-2">
-        {filteredList.map((item, index) => (
+        {paginatedList.map((item, index) => (
           <React.Fragment key={index}>
             <div
               className="grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr_1fr_1fr] items-center gap-3 p-3 bg-white border border-gray-200 rounded-md shadow-sm hover:shadow-md transition"
@@ -335,6 +341,29 @@ const topSellingRevenue = products
           </React.Fragment>
         ))}
       </div>
+      <div className="flex justify-between items-center mt-6 px-2 text-sm text-gray-600">
+  <span>
+    Showing {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredList.length)} of {filteredList.length}
+  </span>
+  <div className="flex gap-3 items-center">
+    <button
+      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+      disabled={currentPage === 1}
+      className="px-3 py-1 border rounded disabled:opacity-50"
+    >
+      ← Previous
+    </button>
+    <span className="font-medium">Page {currentPage} / {totalPages}</span>
+    <button
+      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+      disabled={currentPage === totalPages}
+      className="px-3 py-1 border rounded disabled:opacity-50"
+    >
+      Next →
+    </button>
+  </div>
+</div>
+
       
     </>
   );

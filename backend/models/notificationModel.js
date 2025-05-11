@@ -4,7 +4,7 @@ const notificationSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ['info', 'warning', 'error', 'success', 'custom'], // nếu cần phân loại
+      enum: ['info', 'warning', 'error', 'success', 'custom', 'flashsale'],  // nếu cần phân loại
       default: 'custom',
     },
     title: {

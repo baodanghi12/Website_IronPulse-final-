@@ -14,12 +14,30 @@ const FlashSaleForm = ({
   const [endTime, setEndTime] = useState(endTimeDefault || '');
   const [salePrices, setSalePrices] = useState({});
   const [discountPercents, setDiscountPercents] = useState({});
-
+  const [searchText, setSearchText] = useState('');
+  const [stockFilter, setStockFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const pageSize = 6;
+  const categories = ['all', ...new Set(products.map(p => p.category).filter(Boolean))];
   const toggleSelect = (id) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
+  const filteredProducts = products.filter((item) => {
+  const totalQty = item.sizes?.reduce((sum, s) => sum + (s.quantity || 0), 0);
+  const matchSearch = item.name.toLowerCase().includes(searchText.toLowerCase());
+  const matchStock = totalQty > 0; // ✅ chỉ hiển thị sản phẩm còn hàng
+  const matchCategory = categoryFilter === 'all' || item.category === categoryFilter;
+
+   return matchSearch && matchStock && matchCategory;
+});
+
+const paginatedProducts = filteredProducts.slice(
+  (currentPage - 1) * pageSize,
+  currentPage * pageSize
+);
 
   const submitFlashSale = async () => {
     const items = selected
@@ -45,13 +63,6 @@ const FlashSaleForm = ({
       return;
     }
 
-    console.log("🛒 Gửi Flash Sale:", {
-      title: 'Flash Sale',
-      products: items,
-      startTime,
-      endTime
-    });
-
     try {
       await axios.post(
         '/api/flashsale/create',
@@ -76,14 +87,48 @@ const FlashSaleForm = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-6xl rounded-lg p-6 shadow-lg max-h-[90vh] overflow-y-auto">
+    <div
+  className="fixed inset-0 flex items-center justify-center z-50"
+  onClick={onClose}
+>
+      <div
+  className="bg-white w-full max-w-6xl rounded-lg p-6 shadow-lg max-h-[90vh] overflow-y-auto"
+  onClick={(e) => e.stopPropagation()} // chặn sự kiện click từ cha
+>
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
           🎯 Add Products to Flash Sale
         </h2>
+{/* Filter UI */}
+<div className="mb-4 flex flex-col lg:flex-row items-center justify-between gap-4">
+  <input
+    type="text"
+    placeholder="🔍 Tìm sản phẩm..."
+    value={searchText}
+    onChange={(e) => {
+      setSearchText(e.target.value);
+      setCurrentPage(1);
+    }}
+    className="border px-3 py-2 rounded w-full lg:w-1/3"
+  />
+
+  <select
+    value={categoryFilter}
+    onChange={(e) => {
+      setCategoryFilter(e.target.value);
+      setCurrentPage(1);
+    }}
+    className="border px-3 py-2 rounded w-full lg:w-[200px]"
+  >
+    {categories.map((cat) => (
+      <option key={cat} value={cat}>
+        {cat === 'all' ? 'Tất cả danh mục' : cat}
+      </option>
+    ))}
+  </select>
+</div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((item) => {
+          {paginatedProducts.map((item) => {
             const totalQty = item.sizes?.reduce((sum, s) => sum + (s.quantity || 0), 0);
             return (
               <div key={item._id} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-gray-50 relative">
@@ -159,6 +204,27 @@ const FlashSaleForm = ({
             );
           })}
         </div>
+        {/* Pagination */}
+<div className="mt-4 flex justify-center gap-4 text-sm">
+  <button
+    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+    disabled={currentPage === 1}
+    className="px-3 py-1 border rounded disabled:opacity-40"
+  >
+    ⬅ Trước
+  </button>
+  <span>Trang {currentPage} / {Math.ceil(filteredProducts.length / pageSize)}</span>
+  <button
+    onClick={() => setCurrentPage((prev) =>
+      prev < Math.ceil(filteredProducts.length / pageSize) ? prev + 1 : prev
+    )}
+    disabled={currentPage === Math.ceil(filteredProducts.length / pageSize)}
+    className="px-3 py-1 border rounded disabled:opacity-40"
+  >
+    Sau ➡
+  </button>
+</div>
+
 
         {/* Time inputs */}
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">

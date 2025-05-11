@@ -9,6 +9,7 @@ const orderSchema = new mongoose.Schema({
       name: { type: String, required: true }, // ✅ đổi title -> name
       price: { type: Number, required: true },
       quantity: { type: Number, required: true },
+      cost: { type: Number, default: 0 }, // ✅ THÊM DÒNG NÀY
       productId: { type: String }, // optional: nếu có
       colors: { type: [String], default: [] }, // optional
       category: { type: String },

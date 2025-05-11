@@ -8,6 +8,8 @@ import { Modal, Rate } from 'antd';
 const Orders = () => {
   const { backendUrl, token, currency, products } = useContext(ShopContext);
   const [orderData, setOrderData] = useState([]);
+  const [sortOption, setSortOption] = useState('newest'); // ✅ Thêm sortOption
+
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedReviewItem, setSelectedReviewItem] = useState(null);
   const [rating, setRating] = useState(5);
@@ -25,7 +27,7 @@ const Orders = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) {
-        setOrderData(res.data.orders.reverse());
+        setOrderData(res.data.orders);
       }
     } catch (err) {
       console.error(err);
@@ -36,6 +38,25 @@ const Orders = () => {
   useEffect(() => {
     loadOrderData();
   }, [token]);
+
+  // ✅ Hàm sắp xếp
+  const sortOrders = (orders, option) => {
+    const sorted = [...orders];
+    switch (option) {
+      case 'newest':
+        return sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      case 'oldest':
+        return sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      case 'highToLow':
+        return sorted.sort((a, b) => b.amount - a.amount);
+      case 'lowToHigh':
+        return sorted.sort((a, b) => a.amount - b.amount);
+      case 'status':
+        return sorted.sort((a, b) => a.status.localeCompare(b.status));
+      default:
+        return sorted;
+    }
+  };
 
   const submitReview = async ({ orderId, productId, rating, comment }) => {
     try {
@@ -83,13 +104,28 @@ const Orders = () => {
         <Title text1={'MY'} text2={'ORDERS'} />
       </div>
 
+      {/* ✅ Dropdown sắp xếp */}
+      <div className="mb-6">
+        <label className="mr-2 font-medium text-sm">Sắp xếp theo:</label>
+        <select
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value)}
+          className="border px-3 py-1 rounded text-sm"
+        >
+          <option value="newest">Mới nhất</option>
+          <option value="oldest">Cũ nhất</option>
+          <option value="highToLow">Tổng tiền: cao → thấp</option>
+          <option value="lowToHigh">Tổng tiền: thấp → cao</option>
+          <option value="status">Trạng thái đơn hàng</option>
+        </select>
+      </div>
+
       <div className="space-y-8">
-        {orderData.map((order, index) => {
+        {sortOrders(orderData, sortOption).map((order, index) => {
           const statusIndex = ORDER_STEPS.findIndex(step => step === order.status);
 
           return (
             <div key={index} className="bg-white rounded-xl shadow border p-6">
-              {/* Status progress bar center aligned */}
               <div className="mb-6">
                 <div className="flex justify-center">
                   <div className="flex items-center w-full max-w-2xl">
@@ -123,8 +159,8 @@ const Orders = () => {
                   const image = Array.isArray(matchedProduct?.image)
                     ? matchedProduct.image[0]
                     : typeof matchedProduct?.image === 'string'
-                    ? matchedProduct.image
-                    : null;
+                      ? matchedProduct.image
+                      : null;
 
                   return (
                     <div key={idx} className="flex items-center gap-4">

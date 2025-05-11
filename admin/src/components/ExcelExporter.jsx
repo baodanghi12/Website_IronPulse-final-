@@ -2,13 +2,19 @@ import React from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
-const ExcelExporter = ({ reportData, bestCategories, bestProducts, flashSaleData = [] }) => {
+const ExcelExporter = ({ reportData, bestCategories, bestProducts, flashSaleData = [], filterMeta }) => {
   const exportToExcel = async () => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Revenue Overview');
 
     const formatVND = (value) =>
       typeof value === 'number' ? new Intl.NumberFormat('vi-VN').format(value) + ' ₫' : '';
+
+    const formatDateVN = (dateStr) => {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    };
 
     const evaluateTrend = (value) => {
       if (typeof value !== 'number') return '';
@@ -19,7 +25,6 @@ const ExcelExporter = ({ reportData, bestCategories, bestProducts, flashSaleData
 
     const profit = reportData.revenue - reportData.totalCost;
 
-    // Helpers
     const addSectionTitle = (title) => {
       sheet.addRow([title]);
       sheet.lastRow.font = { bold: true };
@@ -51,6 +56,42 @@ const ExcelExporter = ({ reportData, bestCategories, bestProducts, flashSaleData
         cell.alignment = { vertical: 'middle', horizontal: 'left' };
       });
     };
+
+    // === Tiêu đề chính đầu trang ===
+    let mainTitle = 'BÁO CÁO DOANH THU';
+    if (filterMeta?.rangeType === 'day' && filterMeta.dateRange?.start) {
+      mainTitle = `DOANH THU NGÀY ${formatDateVN(filterMeta.dateRange.start)}`;
+    } else if (filterMeta?.rangeType === 'month' && filterMeta.dateRange?.start) {
+      const [year, month] = filterMeta.dateRange.start.split('-');
+      mainTitle = `DOANH THU THÁNG ${month}/${year}`;
+    } else if (filterMeta?.rangeType === 'quarter' && filterMeta.dateRange?.start) {
+      const date = new Date(filterMeta.dateRange.start);
+      const quarter = Math.floor(date.getMonth() / 3) + 1;
+      const year = date.getFullYear();
+      mainTitle = `DOANH THU QUÝ ${quarter} NĂM ${year}`;
+    } else if (filterMeta?.rangeType === 'year' && filterMeta.dateRange?.start) {
+      const [year] = filterMeta.dateRange.start.split('-');
+      mainTitle = `DOANH THU NĂM ${year}`;
+    } else if (filterMeta?.rangeType && filterMeta.dateRange?.start && filterMeta.dateRange?.end) {
+      mainTitle = `DOANH THU TỪ ${formatDateVN(filterMeta.dateRange.start)} ĐẾN ${formatDateVN(filterMeta.dateRange.end)}`;
+    }
+    const titleRow = sheet.addRow([mainTitle]);
+titleRow.font = { size: 16, bold: true };
+titleRow.alignment = { vertical: 'middle', horizontal: 'center' };
+sheet.mergeCells(`A${titleRow.number}:G${titleRow.number}`);
+    sheet.addRow([]);
+
+    // 0. Thông tin filter
+    if (filterMeta) {
+      addSectionTitle('0. Bộ lọc áp dụng');
+      addHeaderRow(['Loại thống kê', 'Ngày bắt đầu', 'Ngày kết thúc']);
+      addDataRowWithBorder([
+        filterMeta.rangeType || '',
+        formatDateVN(filterMeta.dateRange?.start) || '',
+        formatDateVN(filterMeta.dateRange?.end) || ''
+      ]);
+      sheet.addRow([]);
+    }
 
     // I. Tổng quan doanh thu
     addSectionTitle('I. Tổng quan doanh thu');
@@ -124,14 +165,34 @@ const ExcelExporter = ({ reportData, bestCategories, bestProducts, flashSaleData
     addDataRowWithBorder(['Profit MOM', '', 'Tăng trưởng lợi nhuận theo tháng (%)']);
     addDataRowWithBorder(['Profit YOY', 'Tương tự MOM', 'Tăng trưởng lợi nhuận theo năm (%)']);
 
-    // Format column width
     sheet.columns.forEach((col) => {
       col.width = 25;
     });
 
-    // Xuất file
     const buffer = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), 'IronPulse_Revenue_Report.xlsx');
+    let filename = 'IronPulse_Revenue_Report.xlsx';
+
+if (filterMeta?.rangeType === 'day' && filterMeta.dateRange?.start) {
+  const date = formatDateVN(filterMeta.dateRange.start).replace(/\//g, '-');
+  filename = `DoanhThu_${date}.xlsx`;
+} else if (filterMeta?.rangeType === 'month' && filterMeta.dateRange?.start) {
+  const [year, month] = filterMeta.dateRange.start.split('-');
+  filename = `DoanhThu_Thang-${month}-${year}.xlsx`;
+} else if (filterMeta?.rangeType === 'quarter' && filterMeta.dateRange?.start) {
+  const date = new Date(filterMeta.dateRange.start);
+  const quarter = Math.floor(date.getMonth() / 3) + 1;
+  const year = date.getFullYear();
+  filename = `DoanhThu_Quy-${quarter}-${year}.xlsx`;
+} else if (filterMeta?.rangeType === 'year' && filterMeta.dateRange?.start) {
+  const [year] = filterMeta.dateRange.start.split('-');
+  filename = `DoanhThu_Nam-${year}.xlsx`;
+} else if (filterMeta?.dateRange?.start && filterMeta?.dateRange?.end) {
+  const start = formatDateVN(filterMeta.dateRange.start).replace(/\//g, '-');
+  const end = formatDateVN(filterMeta.dateRange.end).replace(/\//g, '-');
+  filename = `DoanhThu_${start}_ĐẾN_${end}.xlsx`;
+}
+
+saveAs(new Blob([buffer]), filename);
   };
 
   return (

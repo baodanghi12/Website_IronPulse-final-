@@ -13,7 +13,7 @@ const FlashSaleList = ({ allProducts, token, onSuccess }) => {
   const fetchFlashSale = useCallback(async () => {
     try {
       const res = await axios.get('/api/flashsale/active');
-      console.log("📦 Flash Sale API response:", res.data);
+      
   
       const { success, products, startTime, endTime } = res.data;
   
@@ -64,7 +64,7 @@ const FlashSaleList = ({ allProducts, token, onSuccess }) => {
 
   // ⏰ Countdown
   useEffect(() => {
-    console.log("🔎 saleTime for countdown:", saleTime);
+    
   
     if (
       saleTime?.endTime instanceof Date &&
@@ -114,8 +114,9 @@ const FlashSaleList = ({ allProducts, token, onSuccess }) => {
       });
   
       if (res.data.success) {
-        toast.success('🎉 All flash sale items cleared');
-        fetchFlashSale(); // ✅ reload danh sách
+        setSaleProducts([]);          // 👈 reset danh sách
+        setSaleTime(null);            // 👈 reset thời gian sale
+        setRemainingTime(null);       // 👈 reset đồng hồ
       } else {
         toast.error(res.data.message || 'Clear failed');
       }

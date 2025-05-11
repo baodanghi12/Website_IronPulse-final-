@@ -5,7 +5,8 @@ import { VND } from '../utils/handleCurrency';
 import SalesAndPurchaseStatistic from '../components/SalesAndPurchaseStatistic';
 // import { handleAPI } from '../utils/api';
 import TopSellingAndLowQuantityStatistic from '../components/TopSellingAndLowQuantityStatistic';
-import axios from 'axios'
+import axios from 'axios';
+import dayjs from 'dayjs';
 
 const HomeScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,11 +25,17 @@ const HomeScreen = () => {
   const getStatistics = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get('/api/statistics/orders');
+      const res = await axios.get('/api/statistics/summary', {
+      params: {
+        type: 'monthly',
+        date: dayjs().startOf('month').format('YYYY-MM-DD'),
+      },
+});
+
   
       const { sales, revenue, totalCost, profit, quantityInHand, toBeReceivedOrders } = res.data;
       setStatisticValues({
-        salesCount: sales,
+        salesCount: Array.isArray(sales) ? sales.length : Number(sales) || 0,
         revenue,
         cost: totalCost,
         profit,

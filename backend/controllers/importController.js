@@ -1,14 +1,14 @@
 import Import from '../models/importModel.js';
 import Product from '../models/productModel.js'; // Sử dụng đúng mô hình Product
-
+import Notification from '../models/notificationModel.js';
 // GET /api/imports
 export const getAllImports = async (req, res) => {
   try {
     const imports = await Import.find().populate({
-      path: 'products.productId',
-      model: 'Product',
-      select: 'name price sizes',
-    });
+  path: 'products.productId',
+  model: 'Product',
+  select: 'name price sizes image',
+});
 
     const formatted = imports.map((item) => {
       const productDetails = item.products.map((p) => {
@@ -27,6 +27,7 @@ export const getAllImports = async (req, res) => {
           cost,
           quantity,
           sizes, // giữ nguyên để client hiển thị chi tiết theo size
+           image: product.image || [],
         };
       });
 
@@ -90,7 +91,14 @@ export const createImport = async (req, res) => {
 
     // Lưu phiếu nhập vào MongoDB
     await importRecord.save();
-
+        await Notification.create({
+      type: 'success',
+      title: '📦 Nhập hàng mới',
+      content: `Đã nhập ${formattedProducts.length} sản phẩm với tổng chi phí ${totalCost.toLocaleString()} VND`,
+      link: '/admin/imports',
+      isRead: false,
+      createdAt: new Date()
+    });
     // Cập nhật lại số lượng và cost cho các sản phẩm
     for (const product of formattedProducts) {
       for (const size of product.sizes) {

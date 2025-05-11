@@ -6,13 +6,16 @@ import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import { Button } from 'antd';
 import { VND } from '../utils/handleCurrency';
+import { useLocation } from 'react-router-dom';
+const useQuery = () => new URLSearchParams(useLocation().search);
 const { RangePicker } = DatePicker;
 
 const Bills = ({ token }) => {
   const [bills, setBills] = useState([]);
   const [selectedBill, setSelectedBill] = useState(null);
   const [filterDateRange, setFilterDateRange] = useState(null);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const fetchAllBills = async () => {
     if (!token) return;
     try {
@@ -32,9 +35,19 @@ const Bills = ({ token }) => {
     }
   };
 
-  useEffect(() => {
-    fetchAllBills();
-  }, [token]);
+  const query = useQuery();
+
+useEffect(() => {
+  fetchAllBills();
+}, [token]);
+
+useEffect(() => {
+  const idFromQuery = query.get('id');
+  if (idFromQuery && bills.length > 0) {
+    const match = bills.find(bill => bill._id === idFromQuery);
+    if (match) setSelectedBill(match);
+  }
+}, [bills]);
 
   const filteredBills = bills.filter((bill) => {
     if (!filterDateRange) return true;
@@ -43,6 +56,8 @@ const Bills = ({ token }) => {
       (dayjs(bill.date).isBefore(filterDateRange[1], 'day') || dayjs(bill.date).isSame(filterDateRange[1], 'day'))
     );
   });
+  const paginatedBills = filteredBills.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
 
   const handlePrintBill = (bill) => {
     const logoUrl = 'https://yourdomain.com/logo.png'; 
@@ -109,7 +124,9 @@ const Bills = ({ token }) => {
     printWindow.focus();
     printWindow.print();
   };
-
+  useEffect(() => {
+  setCurrentPage(1);
+}, [filterDateRange]);
   return (
     <div>
       <h3 className="text-xl font-semibold mb-4">Bills Page</h3>
@@ -136,7 +153,7 @@ const Bills = ({ token }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredBills.map((bill) => (
+            {paginatedBills.map((bill) => (
               <tr
                 key={bill._id}
                 className="border-t cursor-pointer hover:bg-gray-50"
@@ -166,8 +183,33 @@ const Bills = ({ token }) => {
             ))}
           </tbody>
         </table>
+          
       )}
-
+    <div className="mt-4 flex justify-center">
+  <div className="flex gap-2 items-center">
+    <button
+      className="px-3 py-1 rounded border bg-white hover:bg-gray-100 disabled:opacity-40"
+      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+      disabled={currentPage === 1}
+    >
+      Prev
+    </button>
+    <span className="text-sm text-gray-700">
+      Page {currentPage} of {Math.ceil(filteredBills.length / pageSize)}
+    </span>
+    <button
+      className="px-3 py-1 rounded border bg-white hover:bg-gray-100 disabled:opacity-40"
+      onClick={() =>
+        setCurrentPage((prev) =>
+          prev < Math.ceil(filteredBills.length / pageSize) ? prev + 1 : prev
+        )
+      }
+      disabled={currentPage >= Math.ceil(filteredBills.length / pageSize)}
+    >
+      Next
+    </button>
+  </div>
+</div>
       {/* Popup Bill Detail */}
 
 

@@ -1,6 +1,7 @@
 import flashSaleModel from "../models/flashSaleModel.js";
 import mongoose from "mongoose"; 
-
+import Notification from "../models/notificationModel.js";
+import productModel from '../models/productModel.js';
 export const createFlashSale = async (req, res) => {
   try {
     const { title, startTime, endTime, isActive, products } = req.body;
@@ -47,6 +48,13 @@ export const createFlashSale = async (req, res) => {
       });
 
       await existing.save();
+      await Notification.create({
+        type: 'flashsale',
+        title: `Cập nhật Flash Sale đang chạy`,
+        content: `${cleanProducts.length} sản phẩm đã được thêm hoặc sửa`,
+        isRead: false,
+        link: '/admin/flashsale',
+      });
       return res.json({ success: true, message: "Flash Sale updated." });
     } else {
       const flashSale = await flashSaleModel.create({
@@ -56,6 +64,14 @@ export const createFlashSale = async (req, res) => {
         isActive,
         products: cleanProducts,
       });
+      await Notification.create({
+        type: 'flashsale',
+        title: 'Đã tạo Flash Sale mới',
+        content: `Từ ${new Date(startTime).toLocaleDateString()} đến ${new Date(endTime).toLocaleDateString()} – ${cleanProducts.length} sản phẩm`,
+        isRead: false,
+        link: '/admin/flashsale'
+      });
+
 
       return res.json({ success: true, flashSale });
     }
@@ -127,6 +143,7 @@ export const removeProductFromSale = async (req, res) => {
         isActive: true,
         'products.productId': productId,
       });
+      const removedProduct = await productModel.findById(productId);
   
       if (!flashSale) {
         return res.status(404).json({ success: false, message: 'Product not in flash sale' });
@@ -137,6 +154,13 @@ export const removeProductFromSale = async (req, res) => {
       );
   
       await flashSale.save();
+      await Notification.create({
+        type: 'flashsale',
+        title: `Đã gỡ sản phẩm khỏi Flash Sale`,
+         content: `Tên: ${removedProduct?.name || 'Không rõ'} | Danh mục: ${removedProduct?.category || '---'}`,
+        isRead: false,
+        link: '/admin/flashsale',
+      });
       res.json({ success: true, message: 'Product removed from flash sale' });
     } catch (err) {
       res.status(500).json({ success: false, message: err.message });
@@ -155,6 +179,13 @@ export const removeProductFromSale = async (req, res) => {
           },
         }
       );
+            await Notification.create({
+        type: 'flashsale',
+        title: 'Đã xóa toàn bộ sản phẩm khỏi Flash Sale',
+        content: 'Tất cả sản phẩm flash sale đã được gỡ và vô hiệu hóa',
+        isRead: false,
+        link: '/admin/flashsale',
+      });
       res.json({ success: true, message: 'All flash sale entries removed' });
     } catch (err) {
       res.status(500).json({ success: false, message: err.message });

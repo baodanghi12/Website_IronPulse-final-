@@ -32,8 +32,12 @@ const UserManagement = ({ role }) => {
   const [modalMode, setModalMode] = useState('view'); // view | edit | create
   const [userOrders, setUserOrders] = useState([]);
   const [userWishlist, setUserWishlist] = useState([]);
+  const [orderPage, setOrderPage] = useState(1);
+  const pageSize = 5;
+  const [sortOrder, setSortOrder] = useState('desc'); 
   const [activeDetailTab, setActiveDetailTab] = useState("1");
   const [form] = Form.useForm();
+  
 
   useEffect(() => {
     fetchUsersAndStaff();
@@ -73,7 +77,7 @@ const UserManagement = ({ role }) => {
           axios.get(`/api/user/${userId}/wishlist`)
         ]);
   
-        console.log('✅ Wishlist API response:', wishlistRes.data.wishlist); // ✅ Đặt đúng chỗ
+        
   
         setUserOrders(ordersRes.data.orders || []);
         setUserWishlist(wishlistRes.data.wishlist || []);
@@ -177,6 +181,14 @@ const UserManagement = ({ role }) => {
       ),
     },
   ];
+  const paginatedOrders = userOrders
+  .slice()
+  .sort((a, b) => {
+    const aTime = new Date(a.createdAt).getTime();
+    const bTime = new Date(b.createdAt).getTime();
+    return sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
+  })
+  .slice((orderPage - 1) * pageSize, orderPage * pageSize);
 
   return (
     <div className="container py-4">
@@ -291,78 +303,104 @@ const UserManagement = ({ role }) => {
                     key: '2',
                     label: 'Order History',
                     children: (
-                      <Table
-  dataSource={userOrders}
-  columns={[
-    {
-      title: 'Order ID',
-      dataIndex: '_id',
-      render: (id) => (
-        <span
-          style={{
-            backgroundColor: '#e6f7ff',
-            padding: '2px 8px',
-            borderRadius: '5px',
-            color: '#1890ff',
-            fontWeight: 500,
-          }}
-        >
-          #{id.slice(-6)}
-        </span>
-      ),
-    },
-    {
-      title: 'Total',
-      render: (order) =>
-        typeof order.amount === 'number'
-          ? order.amount.toLocaleString('vi-VN', {
-              style: 'currency',
-              currency: 'VND',
-            })
-          : 'N/A',
-    },
-    
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      render: (status) => {
-        const colorClass =
-          status === 'Delivered'
-            ? 'bg-green-500'
-            : status === 'Shipped'
-            ? 'bg-blue-500'
-            : status === 'Packing'
-            ? 'bg-yellow-500'
-            : status === 'Out for delivery'
-            ? 'bg-orange-500'
-            : 'bg-gray-500';
-        return (
+                      <div>
+  <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
+    <Select
+      value={sortOrder}
+      onChange={(value) => setSortOrder(value)}
+      style={{ width: 200 }}
+      options={[
+        { label: 'Newest First', value: 'desc' },
+        { label: 'Oldest First', value: 'asc' },
+      ]}
+    />
+  </div>
+  <Table
+    dataSource={paginatedOrders}
+    columns={[
+      {
+        title: 'Order ID',
+        dataIndex: '_id',
+        render: (id) => (
           <span
-            className={`${colorClass} text-white px-2 py-1 rounded text-sm`}
-            style={{ display: 'inline-block' }}
+            style={{
+              backgroundColor: '#e6f7ff',
+              padding: '2px 8px',
+              borderRadius: '5px',
+              color: '#1890ff',
+              fontWeight: 500,
+            }}
           >
-            {status}
+            #{id.slice(-6)}
           </span>
-        );
+        ),
       },
-    },
-    {
-      title: 'Created At',
-      dataIndex: 'createdAt',
-      render: (value) => moment(value).format('YYYY-MM-DD HH:mm'),
-    },
-    {
-      title: 'Delivered At',
-      dataIndex: 'updatedAt',
-      render: (value, record) =>
-        record.status === 'Delivered'
-          ? moment(value).format('YYYY-MM-DD HH:mm')
-          : '—',
-    },
-  ]}
-  rowKey="_id"
-  pagination={false}
-/>
+      {
+        title: 'Total',
+        render: (order) =>
+          typeof order.amount === 'number'
+            ? order.amount.toLocaleString('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              })
+            : 'N/A',
+      },
+      {
+        title: 'Status',
+        dataIndex: 'status',
+        render: (status) => {
+          const colorClass =
+            status === 'Delivered'
+              ? 'bg-green-500'
+              : status === 'Shipped'
+              ? 'bg-blue-500'
+              : status === 'Packing'
+              ? 'bg-yellow-500'
+              : status === 'Out for delivery'
+              ? 'bg-orange-500'
+              : 'bg-gray-500';
+          return (
+            <span
+              className={`${colorClass} text-white px-2 py-1 rounded text-sm`}
+              style={{ display: 'inline-block' }}
+            >
+              {status}
+            </span>
+          );
+        },
+      },
+      {
+        title: 'Created At',
+        dataIndex: 'createdAt',
+        render: (value) => moment(value).format('YYYY-MM-DD HH:mm'),
+      },
+      {
+        title: 'Delivered At',
+        dataIndex: 'updatedAt',
+        render: (value, record) =>
+          record.status === 'Delivered'
+            ? moment(value).format('YYYY-MM-DD HH:mm')
+            : '—',
+      },
+    ]}
+    rowKey="_id"
+    pagination={{
+      pageSize,
+      current: orderPage,
+      onChange: (page) => setOrderPage(page),
+      showSizeChanger: false,
+    }}
+    onRow={(record) => ({
+      onClick: () => {
+        const orderId = record._id;
+        const isBill = record.status === 'Delivered' && record.payment;
+        window.open(`/${isBill ? 'bills' : 'orders'}?id=${orderId}`, '_blank');
+      },
+      style: { cursor: 'pointer' },
+    })}
+  />
+</div>
+
                     ),
                   },
                   {
@@ -424,6 +462,7 @@ const UserManagement = ({ role }) => {
           ]}
         />
       </Modal>
+
     </div>
   );
 };

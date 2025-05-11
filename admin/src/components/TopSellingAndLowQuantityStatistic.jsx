@@ -65,7 +65,7 @@ const TopSellingAndLowQuantityStatistic = () => {
        {/* Card 1: Top Selling Products */}
        <Card
         title="Top Selling Stock"
-        extra={<Link to={`/bills`}>See all</Link>}
+        extra={<Link to="/list?sort=topSelling">See all</Link>}
         style={{ flex: 2 }}
       >
         {loadingTop ? (
@@ -82,7 +82,7 @@ const TopSellingAndLowQuantityStatistic = () => {
               <div style={{ flex: 1 }}>Remain</div>
               <div style={{ flex: 1 }}>Price</div>
             </div>
-            {topSellingProducts.map((product) => (
+            {topSellingProducts.slice(0, 4).map((product) => (
               
               <div
                 key={product._id}

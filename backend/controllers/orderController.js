@@ -5,6 +5,8 @@ import Order from '../models/orderModel.js';
 import BillModel from '../models/BillModel.js'; 
 import productModel from "../models/productModel.js";
 import promotionModel from "../models/promotionModel.js"
+import Notification from '../models/notificationModel.js';
+
 import mongoose from 'mongoose';
 import qs from 'qs'
 import crypto from 'crypto'
@@ -21,8 +23,30 @@ const placeOrderZalo = async (req, res) => {
   try {
     const userId = req.userId;
     const { items, address, phone, promotionCode } = req.body;
+    const {
+    firstName,
+    lastName,
+    street,
+    city,
+    state,
+    zipcode,
+    country
+  } = address || {};
+    // ✅ Thêm cost vào từng item
+    const enrichedItems = await Promise.all(
+      items.map(async (item) => {
+        const product = await productModel.findById(item._id);
+        const cost = product?.cost || 0;
 
-    const subTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        return {
+          ...item,
+          productId: item._id,
+          cost
+        };
+      })
+    );
+
+    const subTotal = enrichedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const shippingFee = 30000;
 
     let discountAmount = 0;
@@ -45,7 +69,7 @@ const placeOrderZalo = async (req, res) => {
 
     const orderData = {
       userId,
-      items,
+      items: enrichedItems, // ✅ items đã có cost
       address,
       phone,
       amount,
@@ -59,13 +83,19 @@ const placeOrderZalo = async (req, res) => {
 
     const newOrder = new orderModel(orderData);
     await newOrder.save();
-
+    await Notification.create({
+  type: 'info',
+  title: `Đơn hàng mới từ ${firstName || 'Khách hàng'} ${lastName || ''}`,
+  content: `Thanh toán: ZaloPay - Tổng: ${amount.toLocaleString()} VND`,
+  isRead: false,
+  link: `/admin/orders`,
+});
     const embed_data = {
       redirecturl: `${process.env.CLIENT_URL}/verify?orderId=${newOrder._id}&paymentMethod=zalopay`,
     };
 
-    const items_data = items.map((item) => ({
-      itemid: item._id,
+    const items_data = enrichedItems.map((item) => ({
+      itemid: item.productId,
       itemname: item.name,
       itemprice: item.price,
       itemquantity: item.quantity,
@@ -104,6 +134,7 @@ const placeOrderZalo = async (req, res) => {
     res.status(500).json({ success: false, message: "ZaloPay order creation failed" });
   }
 };
+
 
 const markZaloOrderAsPaid = async (req, res) => {
   try {
@@ -164,10 +195,18 @@ const placeOrder = async (req, res) => {
     } = address || {};
     const userId = req.userId;
 
-    const enrichedItems = items.map(item => ({
+    const enrichedItems = await Promise.all(
+  items.map(async (item) => {
+    const product = await productModel.findById(item._id);
+    const cost = product?.cost || 0;
+
+    return {
       ...item,
-      productId: item._id
-    }));
+      productId: item._id,
+      cost
+    };
+  })
+);
 
     const subTotal = enrichedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const shippingFee = 30000;
@@ -221,6 +260,13 @@ const placeOrder = async (req, res) => {
 
     const newOrder = new orderModel(orderData);
     await newOrder.save();
+    await Notification.create({
+  type: 'info',
+  title: `🧾 Đơn hàng mới từ ${firstName || 'Khách hàng'} ${lastName || ''}`,
+  content: `Thanh toán: COD - Tổng: ${finalAmount.toLocaleString()} VND`,
+  isRead: false,
+  link: `/admin/orders`,
+});
 
     // ✅ Cập nhật tồn kho
     for (const item of enrichedItems) {
@@ -264,12 +310,24 @@ const placeOrder = async (req, res) => {
 const placeOrderStripe = async (req,res) => {
     try {
         const userId = req.userId;
-        const {  items, amount, address} = req.body;
+        const { items, amount, address} = req.body;
+        const enrichedItems = await Promise.all(
+  items.map(async (item) => {
+    const product = await productModel.findById(item._id);
+    const cost = product?.cost || 0;
+
+    return {
+      ...item,
+      productId: item._id,
+      cost
+    };
+  })
+);
         const { origin } = req.headers
 
         const orderData = {
             userId,
-            items,
+            items: enrichedItems,
             address,
             amount,
             paymentMethod:"Stripe",
@@ -381,7 +439,25 @@ const userOrders = async (req, res) => {
       if (typeof payment !== 'undefined') updateFields.payment = payment;
   
       const updatedOrder = await orderModel.findByIdAndUpdate(orderId, updateFields, { new: true });
-  
+      if (updatedOrder) {
+  const updates = [];
+
+  if (status) updates.push(`Trạng thái: ${updatedOrder.status}`);
+  if (typeof payment !== 'undefined') {
+    updates.push(`Thanh toán: ${updatedOrder.payment ? 'Đã thanh toán' : 'Chưa thanh toán'}`);
+  }
+
+  if (updates.length > 0) {
+    await Notification.create({
+      type: 'info',
+      title: `Đơn hàng #${updatedOrder._id.toString().slice(-6).toUpperCase()} đã được cập nhật`,
+      content: updates.join(' | '),
+      isRead: false,
+      link: `/admin/orders`,
+    });
+  }
+}
+
       if (!updatedOrder) {
         return res.status(404).json({ success: false, message: "Order không tồn tại" });
       }
@@ -496,6 +572,7 @@ const getUserOrders = async (req, res) => {
       res.status(500).json({ success: false, message: error.message });
     }
   };
+  
 
   export { verifyStripe ,placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders,
      updateStatus, getUserOrders, addReviewToOrder,placeOrderZalo, markZaloOrderAsPaid }
