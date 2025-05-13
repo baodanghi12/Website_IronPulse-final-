@@ -74,56 +74,70 @@ const ProfilePage = () => {
     }
   };
 
-  return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">👤 Thông tin tài khoản</h1>
-      <div className="bg-white shadow-md rounded-lg p-4 space-y-4">
+   return (
+    <div className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
+        👤 Thông tin tài khoản
+      </h1>
+      <div className="bg-white shadow-lg rounded-2xl p-6 space-y-6">
 
-        {/* Avatar section */}
-        <div className="flex flex-col items-start gap-2">
-          <label className="block font-semibold">Ảnh đại diện:</label>
+        {/* Avatar Section */}
+        <div className="flex items-center gap-6">
           <img
-  src={
-    userInfo.avatar?.startsWith('http')
-      ? userInfo.avatar
-      : `${backendUrl}/${userInfo.avatar}`
-  }
-  alt="avatar"
-  className="w-24 h-24 rounded-full object-cover"
-/>
-          <input type="file" accept="image/*" onChange={handleUploadAvatar} />
-        </div>
-
-        <p><strong>Tên:</strong> {userInfo.name}</p>
-        <p><strong>Email:</strong> {userInfo.email}</p>
-        <p><strong>Ngày tạo:</strong> {new Date(userInfo.createdAt).toLocaleString()}</p>
-
-        <div>
-          <label className="block font-semibold mb-1">Số điện thoại:</label>
-          <input
-            type="text"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full border rounded px-3 py-2"
+            src={
+              userInfo.avatar?.startsWith('http')
+                ? userInfo.avatar
+                : `${backendUrl}/${userInfo.avatar}`
+            }
+            alt="avatar"
+            className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
           />
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">Thay ảnh đại diện:</label>
+            <input type="file" accept="image/*" onChange={handleUploadAvatar} />
+          </div>
         </div>
 
-        <div>
-          <label className="block font-semibold mb-1">Địa chỉ giao hàng:</label>
-          <textarea
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="w-full border rounded px-3 py-2"
-          ></textarea>
+        {/* Info Section */}
+        <div className="grid gap-4">
+          <p><strong>Tên:</strong> {userInfo.name}</p>
+          <p><strong>Email:</strong> {userInfo.email}</p>
+          <p><strong>Ngày tạo:</strong> {new Date(userInfo.createdAt).toLocaleString()}</p>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
-        >
-          {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
-        </button>
+        {/* Editable Fields */}
+        <div className="grid gap-4">
+          <div>
+            <label className="block font-semibold text-gray-700 mb-1">Số điện thoại:</label>
+            <input
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-gray-700 mb-1">Địa chỉ giao hàng:</label>
+            <textarea
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full border rounded-lg px-4 py-2 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
+        </div>
+
+        {/* Save Button */}
+        <div className="text-right">
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className={`px-6 py-2 rounded-lg text-white font-semibold transition 
+              ${loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-black hover:bg-gray-800'}`}
+          >
+            {loading ? 'Đang lưu...' : '💾 Lưu thay đổi'}
+          </button>
+        </div>
       </div>
     </div>
   );

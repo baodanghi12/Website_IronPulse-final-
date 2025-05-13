@@ -7,10 +7,7 @@ import { DatePicker, Select, Button, Space } from 'antd';
 import { VND } from '../utils/handleCurrency';
 import dayjs from 'dayjs';
 import { FaBoxOpen, FaClipboardList, FaTruck, FaMotorcycle } from 'react-icons/fa'; 
-import { useLocation } from 'react-router-dom';
-function useQuery() {
-  return new URLSearchParams(useLocation().search);
-}
+
 const { RangePicker } = DatePicker;
 const statusIcons = {
   'Order Placed': <FaClipboardList className="text-lg" />,
@@ -77,32 +74,16 @@ const Orders = ({ token }) => {
     }
   };
 
- const query = useQuery();
+  useEffect(() => {
+    fetchAllOrders();
+  }, [token]);
 
-useEffect(() => {
-  fetchAllOrders();
-}, [token]);
-
-useEffect(() => {
-  if (selectedOrder) {
-    setOrderStatus(selectedOrder.status || '');
-    setPaymentStatus(selectedOrder.payment ? 'Done' : 'Pending');
-  }
-}, [selectedOrder]);
-
-// ✅ Load đơn hàng nếu có id từ query
-useEffect(() => {
-  const idFromQuery = query.get('id');
-  if (idFromQuery && orders.length > 0) {
-    const match = orders.find(order => order._id === idFromQuery);
-    if (match) {
-      setSelectedOrder(match);
-    } else {
-      toast.warning('Order not found.');
+  useEffect(() => {
+    if (selectedOrder) {
+      setOrderStatus(selectedOrder.status || '');
+      setPaymentStatus(selectedOrder.payment ? 'Done' : 'Pending');
     }
-  }
-}, [orders]);
-
+  }, [selectedOrder]);
   const handlePrintOrder = (order) => {
     const logoUrl = 'https://yourdomain.com/logo.png'; // thay bằng logo thật
     const storeName = 'IRON PULSE - Fashion Store';
@@ -419,22 +400,23 @@ useEffect(() => {
 {/* Payment Status Dropdown with color */}
 <div>
   <label className='font-medium mr-2'>Payment:</label>
-  <select
-    className={`p-1 border rounded-md bg-white ${
-      paymentStatus === 'Done'
-        ? 'bg-green-100 text-green-700'
-        : 'bg-yellow-100 text-yellow-800'
-    }`}
-    value={paymentStatus}
-    onChange={(e) => setPaymentStatus(e.target.value)}
-    disabled={selectedOrder.status === 'Delivered' && selectedOrder.payment}
-  >
-    <option value='Done'>Done</option>
-    <option value='Pending'>Pending</option>
-  </select>
+ <select
+  className={`p-1 border rounded-md bg-white ${
+    paymentStatus === 'Done'
+      ? 'bg-green-100 text-green-700'
+      : 'bg-yellow-100 text-yellow-800'
+  }`}
+  value={paymentStatus}
+  onChange={(e) => setPaymentStatus(e.target.value)}
+  disabled={
+    selectedOrder.status === 'Delivered' && selectedOrder.payment ||
+    selectedOrder.paymentMethod === 'Online'
+  }
+>
+  <option value='Done'>Done</option>
+  <option value='Pending'>Pending</option>
+</select>
 </div>
-
-
                 {/* Update Button */}
                 <button
   className={`mt-2 px-4 py-1 text-white rounded transition ${
@@ -442,7 +424,11 @@ useEffect(() => {
       ? 'bg-gray-400 cursor-not-allowed'
       : 'bg-blue-500 hover:bg-blue-600'
   }`}
-  disabled={selectedOrder.status === 'Delivered' && selectedOrder.payment}
+  disabled={
+  selectedOrder.status === 'Delivered' && selectedOrder.payment ||
+  selectedOrder.paymentMethod === 'Online'
+}
+
   onClick={async () => {
     try {
       const response = await axios.post(

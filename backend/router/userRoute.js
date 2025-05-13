@@ -23,7 +23,8 @@ import {
   addToWishlist,
   getWishlist,
   removeFromWishlist,
-  getUserWishlist
+  getUserWishlist,
+  sendDiscountCode
 } from '../controllers/userController.js';
 
 import authUser from '../middleware/auth.js';
@@ -44,6 +45,7 @@ userRouter.get('/profile', authUser, getUserProfile);
 userRouter.post('/wishlist/add', authUser, addToWishlist);
 userRouter.get('/wishlist', authUser, getWishlist);
 userRouter.delete('/wishlist/:id', authUser, removeFromWishlist);
+userRouter.post('/send-discount', sendDiscountCode);
 // ADMIN - USER MANAGEMENT
 userRouter.get('/', getAllUsers);              // GET all users
 userRouter.post('/', createUser);

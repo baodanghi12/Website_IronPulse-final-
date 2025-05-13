@@ -6,7 +6,7 @@ import BillModel from '../models/BillModel.js';
 import productModel from "../models/productModel.js";
 import promotionModel from "../models/promotionModel.js"
 import Notification from '../models/notificationModel.js';
-
+import sendOrderEmail from '../utils/sendOrderEmail.js';
 import mongoose from 'mongoose';
 import qs from 'qs'
 import crypto from 'crypto'
@@ -83,6 +83,8 @@ const placeOrderZalo = async (req, res) => {
 
     const newOrder = new orderModel(orderData);
     await newOrder.save();
+    const user = await userModel.findById(userId);
+    await sendOrderEmail(user.email, newOrder);
     await Notification.create({
   type: 'info',
   title: `Đơn hàng mới từ ${firstName || 'Khách hàng'} ${lastName || ''}`,
@@ -295,7 +297,8 @@ const placeOrder = async (req, res) => {
       shippingAddress: address,
       phone
     });
-
+    const user = await userModel.findById(userId);
+    await sendOrderEmail(user.email, newOrder);
     res.json({ success: true, message: "Order Placed" });
 
   } catch (error) {
@@ -337,7 +340,8 @@ const placeOrderStripe = async (req,res) => {
 
         const newOrder = new orderModel(orderData)
         await newOrder.save()
-
+        const user = await userModel.findById(userId);
+        await sendOrderEmail(user.email, newOrder);
         const line_items = items.map((item) => ({
             price_data: {
                 currency: currency,

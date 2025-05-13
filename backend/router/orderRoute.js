@@ -24,13 +24,14 @@ const orderRouter = express.Router();
 orderRouter.post('/list', adminAuth, allOrders);
 orderRouter.post('/status', adminAuth, updateStatus);
 
-
 // Payment Features
 orderRouter.post('/place', authUser, placeOrder);
 orderRouter.post('/stripe', authUser, placeOrderStripe);
 orderRouter.post('/razorpay', authUser, placeOrderRazorpay);
 orderRouter.post('/zalopay', authUser, placeOrderZalo)
-  
+
+//
+
 // User Features
 orderRouter.post('/userorders', authUser, userOrders);
 orderRouter.get('/user/:userId',  getUserOrders); // Trực tiếp sử dụng `getUserOrders` từ controller

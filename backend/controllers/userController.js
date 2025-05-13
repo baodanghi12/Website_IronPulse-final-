@@ -455,7 +455,6 @@ const sendResetOtp = async (req,res)=> {
   }
 
   try {
-    
     const user = await userModel.findOne({email})
     if(!user){
       return res.json({success:false, message:'User not found'})
@@ -471,19 +470,39 @@ const sendResetOtp = async (req,res)=> {
     const mailOption = {
       from: process.env.SENDER_EMAIL,
       to: user.email,
-      subject: '📩 Password Reset OTP',
-      text: `Mã OTP để reset mật khẩu của bạn là: ${otp}. Mã có hiệu lực trong 24 giờ.`,
+      subject: '🔐 Xác Nhận Đặt Lại Mật Khẩu của Bạn',
+      html: `
+        <div class="bg-gray-100 p-6 max-w-lg mx-auto rounded-xl border border-gray-200">
+          <h2 class="text-3xl font-semibold text-center text-blue-600 mb-6">🔒 Đặt Lại Mật Khẩu của Bạn</h2>
+          
+          <p class="text-lg text-gray-700 mb-4">Chào bạn,</p>
+          <p class="text-lg text-gray-700 mb-4">Để đặt lại mật khẩu tài khoản của bạn, vui lòng sử dụng mã OTP dưới đây:</p>
 
+          <div class="bg-teal-500 text-white text-3xl font-bold text-center py-4 rounded-lg mb-6">
+            ${otp}
+          </div>
+
+          <p class="text-lg text-gray-700 mb-4">Mã OTP có hiệu lực trong 24 giờ. Nếu bạn không yêu cầu thay đổi mật khẩu, vui lòng bỏ qua email này.</p>
+
+          <p class="text-lg text-gray-700 mb-4">Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</p>
+
+          <div class="text-center mt-6">
+            <a href="http://localhost:5173/" class="bg-blue-500 text-white py-2 px-6 rounded-lg text-lg hover:bg-blue-600 transition duration-300">Truy Cập Website</a>
+          </div>
+
+          <p class="text-center text-sm text-gray-500 mt-6">Nếu bạn gặp vấn đề hoặc có thắc mắc, vui lòng liên hệ với chúng tôi.</p>
+        </div>
+      `
     }
 
     await transporter.sendMail(mailOption)
 
     return res.json({success:true, message:'OTP sent to your email'})
-
   } catch (error) {
     return res.json({success:false, message: error.message})
   }
 }
+
 
 //Reset User Password
 const resetPassword = async (req,res)=>{
@@ -671,7 +690,42 @@ const getUserWishlist = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+const sendDiscountCode = async (req, res) => {
+  const { email } = req.body;
 
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    // Khởi tạo transporter (hoặc thay bằng transporter global nếu có)
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: `"Iron Pulse" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: '🎉 Mã giảm giá dành riêng cho bạn!',
+      html: `
+        <p>Cảm ơn bạn đã đăng ký. Đây là mã giảm giá đặc biệt dành cho bạn:</p>
+        <h2>SALE2025</h2>
+        <p>Áp dụng khi mua hàng tại website của chúng tôi.</p>
+        <p>Trân trọng,<br/>Iron Pulse Team</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'Discount code sent successfully!' });
+  } catch (error) {
+    console.error('Send discount error:', error);
+    res.status(500).json({ message: 'Failed to send discount code' });
+  }
+};
 
 
 export {
@@ -698,5 +752,6 @@ export {
   addToWishlist,
   getWishlist,
   removeFromWishlist,
-  getUserWishlist
+  getUserWishlist,
+  sendDiscountCode
 };

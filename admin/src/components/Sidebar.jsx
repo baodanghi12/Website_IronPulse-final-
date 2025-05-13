@@ -27,20 +27,20 @@ const Sidebar = ({ role }) => {
             
 
             <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/list">
-                <img className='w-5 h-5' src={assets.order_icon} alt="" />
+                <img className='w-5 h-5' src={assets.list_items} alt="" />
                 <p className='hidden md:block'>List Items</p>
             </NavLink>
 
             <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/orders">
-                <img className='w-5 h-5' src={assets.order_icon} alt="" />
+                <img className='w-5 h-5' src={assets.orders} alt="" />
                 <p className='hidden md:block'>Orders</p>
             </NavLink>
             <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/revenue">
-                <img className='w-5 h-5' src={assets.order_icon} alt="" />
+                <img className='w-5 h-5' src={assets.statistics} alt="" />
                 <p className='hidden md:block'>Revenue</p>
             </NavLink>
             <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/importProduct">
-                <img className='w-5 h-5' src={assets.order_icon} alt="" />
+                <img className='w-5 h-5' src={assets.receipt} alt="" />
                 <p className='hidden md:block'>Import Product</p>
             </NavLink>
             <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/promotions">
@@ -48,7 +48,7 @@ const Sidebar = ({ role }) => {
                 <p className='hidden md:block'>Promotions</p>
             </NavLink>
             <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/bills">
-                <img className='w-5 h-5' src={assets.order_icon} alt="" />
+                <img className='w-5 h-5' src={assets.billManagement} alt="" />
                 <p className='hidden md:block'>Bills</p>
             </NavLink>
             <NavLink className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-1' to="/usermanagement">

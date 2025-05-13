@@ -214,7 +214,12 @@ if (profitLastYear === 0 && profitThisYear > 0) {
         if (!productMap[key]) {
           productMap[key] = {
             productName: item.name || 'Unknown',
-            productId: item.productId || 'N/A',
+            productId:
+    typeof item.productId === 'object' && item.productId !== null
+      ? String(item.productId._id || '')
+      : typeof item.productId === 'string'
+      ? item.productId
+      : '',
             category: item.category || 'Unknown',
             remainingQuantity: 0,
             turnOver: 0,

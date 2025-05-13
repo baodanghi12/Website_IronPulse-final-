@@ -8,7 +8,11 @@ import Icon from './Icon.svg'
 import promotion from './promotion.png'
 import usermanagement from './user_management.png'
 import cod_icon from './cod_icon.png'
-
+import list_items from './list_items.png'
+import orders from './orders.png'
+import statistics from './statistics.png'
+import receipt from './receipt.png'
+import billManagement from './billManagement.png'
 export const assets = {
     logo,
     add_icon,
@@ -20,5 +24,10 @@ export const assets = {
     promotion,
     usermanagement,
     cod_icon,
+    list_items,
+    orders,
+    receipt,
+    statistics,
+    billManagement
 }
 

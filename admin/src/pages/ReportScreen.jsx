@@ -210,7 +210,8 @@ const ReportScreen = () => {
       {/* Best Products */}
       <Table
         dataSource={bestProducts}
-        rowKey="productId"
+         scroll={{ x: 'max-content' }}
+        rowKey={(record, index) => `${record.productName}-${index}`}
         pagination={{ pageSize: 5, hideOnSinglePage: true }}
         style={{ marginTop: '2rem' }}
         columns={[
@@ -238,30 +239,6 @@ const ReportScreen = () => {
                 )}
               </span>
             ),
-          },
-          {
-            title: 'Product ID',
-            dataIndex: 'productId',
-            key: 'productId',
-            render: (productId) => {
-              if (!productId) {
-                return <span style={{ color: 'red', fontWeight: 600 }}>Unknown</span>;
-              }
-              const last6 = productId.slice(-6);
-              return (
-                <span
-                  style={{
-                    backgroundColor: '#e0f7fa',
-                    padding: '2px 8px',
-                    borderRadius: '5px',
-                    fontWeight: '600',
-                    color: '#00796b',
-                  }}
-                >
-                  #{last6}
-                </span>
-              );
-            },
           },
           {
             title: 'Category',
