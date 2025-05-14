@@ -415,25 +415,25 @@ const formatDate = (date, type = 'monthly') => {
 export const getSalesAndOrderChart = async (req, res) => {
   try {
     const type = req.query.type || 'monthly';
-    const date = req.query.date ? new Date(req.query.date) : new Date();
+    const date = req.query.date ? moment(req.query.date) : moment();
 
     let startDate, endDate;
 
     switch (type) {
-      case 'weekly':
-        startDate = new Date(date);
-        startDate.setDate(startDate.getDate() - 6);
-        endDate = new Date(date);
-        break;
-      case 'monthly':
-        startDate = new Date(date.getFullYear(), date.getMonth(), 1);
-        endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
-        break;
-      case 'yearly':
-        startDate = new Date(date.getFullYear(), 0, 1);
-        endDate = new Date(date.getFullYear(), 11, 31, 23, 59, 59);
-        break;
-    }
+  case 'monthly':
+    startDate = date.clone().startOf('month').toDate();
+    endDate = date.clone().endOf('month').toDate();
+    break;
+  case 'weekly':
+    startDate = date.clone().startOf('week').toDate();
+    endDate = date.clone().endOf('week').toDate();
+    break;
+  case 'yearly':
+    startDate = date.clone().startOf('year').toDate();
+    endDate = date.clone().endOf('year').toDate();
+    break;
+}
+
 
     const orders = await orderModel.find({
       createdAt: {

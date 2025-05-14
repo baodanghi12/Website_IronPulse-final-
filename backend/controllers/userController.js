@@ -670,7 +670,7 @@ const removeFromWishlist = async (req, res) => {
     user.markModified('wishlist');
     await user.save();
 
-    res.json({ success: true, message: 'Removed from wishlist' });
+    res.json({ success: true });
   } catch (err) {
     console.error('❌ Error removing from wishlist:', err);
     res.status(500).json({ success: false, message: err.message });

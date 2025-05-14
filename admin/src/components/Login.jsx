@@ -2,35 +2,28 @@ import axios from 'axios'
 import React, { useState } from 'react'
 import { backendUrl } from '../App'
 import { toast } from 'react-toastify'
-
+import { useNavigate } from 'react-router-dom';
 const Login = ({setToken}) => {
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-
+    const navigate = useNavigate();
     const onSubmitHandler = async (e) => {
-        try {
-          e.preventDefault();
-          const response = await axios.post(backendUrl + '/api/user/login', { email, password });
-      
-          if (response.data.success) {
-            setToken(response.data.token);
-            localStorage.setItem('role', response.data.role);
-            
-            if (response.data.role === 'admin') {
-              // navigate to admin dashboard
-            } else if (response.data.role === 'staff') {
-              // navigate to staff dashboard
-            }
-          }
-          
-      
-        } catch (error) {
-          console.log(error);
-          toast.error(error.message);
-        }
-      };
-      
+  try {
+    e.preventDefault();
+    const response = await axios.post(backendUrl + '/api/user/login', { email, password });
+
+    if (response.data.success) {
+      setToken(response.data.token);
+      localStorage.setItem('role', response.data.role);
+      navigate('/home'); // ✅ Chuyển tới trang chính sau login
+    }
+  } catch (error) {
+    console.log(error);
+    toast.error(error.message);
+  }
+};
+
 
   return (
     <div className='min-h-screen flex items-center justify-center w-full'>

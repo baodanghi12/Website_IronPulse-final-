@@ -43,7 +43,8 @@ export const products = [
     price: 280000,
     sizes: ["M", "L", "XL"],
     colors: ["Đen", "Xám"]
-  }
+  },
+
 ];
 
 // Câu hỏi thường gặp (FAQ)

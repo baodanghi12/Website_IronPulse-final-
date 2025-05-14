@@ -115,7 +115,7 @@ const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
   
       if (response.data.success) {
         setWishlist((prev) => prev.filter((item) => item._id !== productId));
-        toast.success('Removed from wishlist');
+        
       } else {
         toast.error(response.data.message || 'Failed to remove from wishlist');
       }
