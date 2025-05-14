@@ -6,6 +6,7 @@ import productModel from '../models/productModel.js';
 // import { createNotification } from '../utils/createNotification.js';
 import { OAuth2Client } from "google-auth-library";
 import transporter from '../config/nodemailer.js'
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -18,7 +19,6 @@ const client = new OAuth2Client(process.env.GG_CLIENT_ID);
 const createToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
-
 
 // GOOGLE LOGIN HANDLER
 // GOOGLE LOGIN HANDLER
@@ -632,7 +632,7 @@ const addToWishlist = async (req, res) => {
     user.markModified('wishlist');
     await user.save();
 
-    res.json({ success: true, message: 'Added to wishlist' });
+    res.json({ success: true  });
   } catch (err) {
     console.error('❌ [addToWishlist] Error:', err);
     res.status(500).json({ success: false, message: err.message });
@@ -708,16 +708,61 @@ const sendDiscountCode = async (req, res) => {
     });
 
     const mailOptions = {
-      from: `"Iron Pulse" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: '🎉 Mã giảm giá dành riêng cho bạn!',
-      html: `
-        <p>Cảm ơn bạn đã đăng ký. Đây là mã giảm giá đặc biệt dành cho bạn:</p>
-        <h2>SALE2025</h2>
-        <p>Áp dụng khi mua hàng tại website của chúng tôi.</p>
-        <p>Trân trọng,<br/>Iron Pulse Team</p>
-      `,
-    };
+  from: `"Iron Pulse" <${process.env.EMAIL_USER}>`,
+  to: email,
+  subject: '🎉 Mã giảm giá đặc biệt dành riêng cho bạn!',
+  html: `
+    <div style="
+      max-width: 600px;
+      margin: auto;
+      font-family: Arial, sans-serif;
+      background-color: #f9fafb;
+      padding: 24px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    ">
+      <h2 style="
+        text-align: center;
+        color: #1f2937;
+        font-size: 20px;
+        font-weight: 600;
+      ">
+        🎁 Thank you for subscribing!
+      </h2>
+
+      <p style="font-size: 16px; color: #374151; margin-top: 12px;">
+        We're excited to have you with us. Here’s your exclusive discount code:
+      </p>
+
+      <div style="text-align: center; margin: 24px 0;">
+        <span style="
+          display: inline-block;
+          background-color: #e0f2fe;
+          color: #0284c7;
+          font-size: 24px;
+          font-weight: bold;
+          padding: 12px 24px;
+          border-radius: 8px;
+          letter-spacing: 2px;
+        ">
+          2030415IP
+        </span>
+      </div>
+
+      <p style="font-size: 15px; color: #4b5563;">
+        Apply this code during checkout on our website to enjoy your discount.
+      </p>
+
+      <hr style="margin: 24px 0; border-top: 1px solid #e5e7eb;" />
+
+      <p style="font-size: 14px; color: #6b7280;">
+        Best regards,<br/>
+        <strong>Iron Pulse Team</strong>
+      </p>
+    </div>
+  `,
+};
+
 
     await transporter.sendMail(mailOptions);
     res.status(200).json({ message: 'Discount code sent successfully!' });

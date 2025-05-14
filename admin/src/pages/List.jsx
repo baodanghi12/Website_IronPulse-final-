@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import EditForm from "../components/EditForm";
 import { VND } from "../utils/handleCurrency";
 import { useLocation } from 'react-router-dom';
-
+import ProductDetail from '../components/ProductDetail'; 
 import FlashSaleList from '../components/FlashSaleList';
 const List = ({ token }) => {
   const [list, setList] = useState([]);
@@ -16,6 +16,8 @@ const List = ({ token }) => {
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
   const [allProducts, setAllProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+const [selectedProductId, setSelectedProductId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   const [inventoryStats, setInventoryStats] = useState({
@@ -258,7 +260,15 @@ const topSellingRevenue = products
               className="grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr_1fr_1fr] items-center gap-3 p-3 bg-white border border-gray-200 rounded-md shadow-sm hover:shadow-md transition"
             >
               <div className="relative w-20 h-20">
-  <img src={item.image[0]} alt={item.name} className="w-full h-full object-cover rounded-md" />
+  <img
+  src={item.image[0]}
+  alt={item.name}
+  className="w-full h-full object-cover rounded-md cursor-pointer"
+  onClick={() => {
+    setSelectedProductId(item._id);
+    setShowDetailModal(true);
+  }}
+/>
   
   {item.newArrival && (
     <div className="absolute top-0 left-0 bg-red-500 text-white text-[10px] px-1 py-[1px] font-semibold rotate-[-45deg] origin-top-left">
@@ -362,7 +372,16 @@ const topSellingRevenue = products
       Next →
     </button>
   </div>
+  <ProductDetail
+  productId={selectedProductId}
+  visible={showDetailModal}
+  onClose={() => {
+    setShowDetailModal(false);
+    setSelectedProductId(null);
+  }}
+/>
 </div>
+
 
       
     </>

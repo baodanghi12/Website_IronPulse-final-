@@ -34,6 +34,7 @@ const ImportProductScreen = () => {
   const [totalCost, setTotalCost] = useState(0); // Store total cost
   const [form] = Form.useForm();
   const [selectedImport, setSelectedImport] = useState(null);
+  const [sortImportOrder, setSortImportOrder] = useState('desc'); // 'desc' = newest first
   // Load import data
   const fetchImportData = async () => {
     try {
@@ -165,74 +166,101 @@ const ImportProductScreen = () => {
         
       >
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
+          <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+  <Select
+    value={sortImportOrder}
+    onChange={(val) => setSortImportOrder(val)}
+    style={{ width: 200 }}
+    options={[
+      { label: 'Newest First', value: 'desc' },
+      { label: 'Oldest First', value: 'asc' },
+    ]}
+  />
+</div>
           <TabPane tab="Import Records" key="1">
-            <Table
-              dataSource={importData}
-              columns={[
-                {
-                  title: 'Import_ID',  // Đổi tên cột thành ImportID
-                  dataIndex: '_id',   // Chỉ định dữ liệu sử dụng trường _id
-                  key: '_id',
-                  render: (value, record) => {
-                    // Kiểm tra nếu _id tồn tại và có đủ độ dài
-                    const last6Digits = record._id && record._id.length >= 6
-                      ? `#${record._id.slice(-6)}` 
-                      : 'N/A';  // Nếu không có _id hợp lệ, trả về 'N/A'
-                  
-                    return (
-                      <span
-                        style={{
-                          padding: '2px 8px',
-                          border: '1px solid rgb(11, 85, 146)',  // Khung xanh
-                          borderRadius: '4px',
-                          color: 'rgb(11, 85, 146)', // Màu chữ xanh
-                        }}
-                      >
-                        {last6Digits}
-                      </span>
-                    );
-                  }
-                },
-                {
-                  title: 'Total Quantity',
-                  dataIndex: 'totalQuantity',
-                  key: 'totalQuantity',
-                },
-                {
-                  title: 'Total Cost',
-                  dataIndex: 'totalCost',
-                  key: 'totalCost',
-                  render: (value) => (value || 0).toLocaleString('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND',
-                  }),
-                },
-                {
-                  title: 'Date',
-                  dataIndex: 'importDate',
-                  key: 'importDate',
-                  render: (value) => value ? dayjs(value).format('DD/MM/YYYY HH:mm:ss') : '(unknown)',
-                },
-                {
-                  title: 'Note',
-                  dataIndex: 'note',
-                  key: 'note',
-                  render: (value) => value ? value : '(null)',
-                },
-                {
-  title: 'Action',
-  key: 'action',
-  render: (_, record) => (
-    <Button type="link" onClick={() => setSelectedImport(record)}>
-      View Details
-    </Button>
-  ),
-}
-              ]}
-              rowKey="_id"
-              pagination={{ pageSize: 5 }}
-            />
-          </TabPane>
+  {/* Bộ lọc sắp xếp */}
+  <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+    <Select
+      value={sortImportOrder}
+      onChange={(val) => setSortImportOrder(val)}
+      style={{ width: 200 }}
+      options={[
+        { label: 'Newest First', value: 'desc' },
+        { label: 'Oldest First', value: 'asc' },
+      ]}
+    />
+  </div>
+
+  <Table
+    dataSource={[...importData].sort((a, b) => {
+      const timeA = new Date(a.importDate).getTime();
+      const timeB = new Date(b.importDate).getTime();
+      return sortImportOrder === 'asc' ? timeA - timeB : timeB - timeA;
+    })}
+    columns={[
+      {
+        title: 'Import_ID',
+        dataIndex: '_id',
+        key: '_id',
+        render: (value, record) => {
+          const last6Digits = record._id?.slice(-6) || 'N/A';
+          return (
+            <span
+              style={{
+                padding: '2px 8px',
+                border: '1px solid rgb(11, 85, 146)',
+                borderRadius: '4px',
+                color: 'rgb(11, 85, 146)',
+              }}
+            >
+              #{last6Digits}
+            </span>
+          );
+        },
+      },
+      {
+        title: 'Total Quantity',
+        dataIndex: 'totalQuantity',
+        key: 'totalQuantity',
+      },
+      {
+        title: 'Total Cost',
+        dataIndex: 'totalCost',
+        key: 'totalCost',
+        render: (value) =>
+          (value || 0).toLocaleString('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+          }),
+      },
+      {
+        title: 'Date',
+        dataIndex: 'importDate',
+        key: 'importDate',
+        render: (value) =>
+          value ? dayjs(value).format('DD/MM/YYYY HH:mm:ss') : '(unknown)',
+      },
+      {
+        title: 'Note',
+        dataIndex: 'note',
+        key: 'note',
+        render: (value) => value || '(null)',
+      },
+      {
+        title: 'Action',
+        key: 'action',
+        render: (_, record) => (
+          <Button type="link" onClick={() => setSelectedImport(record)}>
+            View Details
+          </Button>
+        ),
+      },
+    ]}
+    rowKey="_id"
+    pagination={{ pageSize: 5 }}
+  />
+</TabPane>
+
 
           <TabPane tab="Create Import Record" key="2">
             <Form form={form} layout="vertical" onFinish={onFinish}>

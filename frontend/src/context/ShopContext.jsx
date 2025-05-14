@@ -71,7 +71,6 @@ const [flashSaleEndTime, setFlashSaleEndTime] = useState(null);
       );
   
       if (response.data.success) {
-        toast.success('Added to wishlist');
         await loadWishlist(); 
       } else {
         toast.info(response.data.message || 'Already in wishlist');

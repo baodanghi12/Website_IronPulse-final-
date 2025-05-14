@@ -143,11 +143,18 @@ const Cart = () => {
           <CartTotal subtotal={getCartSubtotal()} />
           <div className="w-full text-end">
             <button
-              onClick={() => navigate('/place-order')}
-              className="bg-black text-white text-sm my-8 px-8 py-3"
+              onClick={() => {
+                if (cartData.length > 0) navigate('/place-order');
+              }}
+              disabled={cartData.length === 0}
+              className={`text-sm my-8 px-8 py-3 ${cartData.length === 0
+                  ? 'bg-gray-400 cursor-not-allowed text-white'
+                  : 'bg-black text-white hover:bg-gray-800'
+                }`}
             >
-              PROCEED TO CHECKOUT
+              {cartData.length === 0 ? 'CART IS EMPTY' : 'PROCEED TO CHECKOUT'}
             </button>
+
           </div>
         </div>
       </div>

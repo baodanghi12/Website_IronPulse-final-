@@ -458,7 +458,8 @@ export const getSalesAndOrderChart = async (req, res) => {
     // ✅ Nếu yearly thì tạo sẵn 12 tháng
     if (type === 'yearly') {
       for (let i = 0; i < 12; i++) {
-        const label = `${(i + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        const label = `${(i + 1).toString().padStart(2, '0')}/${date.toDate().getFullYear()}`;
+
         dateMap[label] = { revenue: 0, cost: 0, orders: 0 };
       }
     }

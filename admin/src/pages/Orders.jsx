@@ -7,7 +7,7 @@ import { DatePicker, Select, Button, Space } from 'antd';
 import { VND } from '../utils/handleCurrency';
 import dayjs from 'dayjs';
 import { FaBoxOpen, FaClipboardList, FaTruck, FaMotorcycle } from 'react-icons/fa'; 
-
+import OrderPopupDetail from '../components/OrderPopupDetail';
 const { RangePicker } = DatePicker;
 const statusIcons = {
   'Order Placed': <FaClipboardList className="text-lg" />,
@@ -307,258 +307,37 @@ const Orders = ({ token }) => {
 </div>
 
       {/* Popup Order Detail */}
-      {selectedOrder && (
-        <div
-          className='fixed top-0 left-0 w-full h-full flex justify-center items-center z-50 bg-transparent'
-          onClick={() => setSelectedOrder(null)}
-        >
-          <div
-            className='w-full max-w-3xl p-6 rounded-xl shadow-xl border border-gray-300 overflow-y-auto max-h-[80vh] bg-white bg-opacity-90 transition-all transform scale-95 opacity-100 animate-pop'
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className='absolute top-3 right-3 text-gray-500 hover:text-black text-xl'
-              onClick={() => setSelectedOrder(null)}
-            >
-              ✖
-            </button>
-
-            <h3 className='text-xl font-semibold mb-4 text-center text-gray-800'>
-              Order Details
-            </h3>
-
-            {/* Info + Status Side-by-Side */}
-            <div className='flex justify-between items-center mb-6'>
-              {/* Avatar + Info */}
-              <div className='flex items-center space-x-4'>
-                <img
-                  src={selectedOrder.avatar || 'default-avatar.png'}
-                  alt='Avatar'
-                  className='w-16 h-16 rounded-full object-cover'
-                />
-                <div>
-                <p>
-                  <strong>Order ID:</strong>{' '}
-                  <span style={{
-                    border: '1px solid #339AF0',
-                    borderRadius: '4px',
-                    padding: '1px 3px',
-                    color: '#339AF0',
-                    display: 'inline-block',
-                    fontWeight: 'bold'
-                  }}>
-                     #{selectedOrder._id.slice(-6).toUpperCase()}
-                  </span>
-                </p>
-                <p><strong>Name:</strong> {selectedOrder.address?.firstName || ''} {selectedOrder.address?.lastName || ''}</p>
-                  <p><strong>Phone:</strong> {selectedOrder.address?.phone}</p>
-                  <p><strong>Address:</strong> {selectedOrder.address?.street}, {selectedOrder.address?.city}, {selectedOrder.address?.state}, {selectedOrder.address?.country}, {selectedOrder.address?.zipcode}</p>
-                  <p><strong>Date:</strong> {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : 'N/A'}</p>
-                  
-
-
-
-
-                </div>
-              </div>
-              
-              {/* Order Status & Payment Status */}
-              <div className='text-sm text-right space-y-2'>
-              <div>
-  <label className='font-medium mr-2'>Order Status:</label>
-  <select
-    className={`p-1 border rounded-md bg-white
-      ${
-        orderStatus === 'Order Placed'
-          ? 'bg-yellow-100 text-yellow-800'
-          : orderStatus === 'Packing'
-          ? 'bg-purple-100 text-purple-700'
-          : orderStatus === 'Shipped'
-          ? 'bg-blue-100 text-blue-700'
-          : orderStatus === 'Out for delivery'
-          ? 'bg-orange-100 text-orange-700'
-          : orderStatus === 'Delivered'
-          ? 'bg-green-100 text-green-700'
-          : 'bg-gray-100 text-gray-700'
+{selectedOrder && (
+  <OrderPopupDetail
+    order={selectedOrder}
+    onClose={() => setSelectedOrder(null)}
+    onStatusChange={(value) => setOrderStatus(value)}
+    onPaymentChange={(value) => setPaymentStatus(value)}
+    onUpdateStatus={async () => {
+      try {
+        const response = await axios.post(
+          backendUrl + '/api/order/status',
+          {
+            orderId: selectedOrder._id,
+            status: orderStatus,
+            payment: paymentStatus === 'Done',
+          },
+          { headers: { token } }
+        );
+        if (response.data.success) {
+          fetchAllOrders();
+          setSelectedOrder(null);
+        } else {
+          toast.error(response.data.message);
+        }
+      } catch (error) {
+        toast.error(error.message);
       }
-    `}
-    value={orderStatus}
-    onChange={(e) => setOrderStatus(e.target.value)}
-    disabled={selectedOrder.status === 'Delivered' && selectedOrder.payment}
-  >
-    <option value='Order Placed'>Order Placed</option>
-    <option value='Packing'>Packing</option>
-    <option value='Shipped'>Shipped</option>
-    <option value='Out for delivery'>Out for delivery</option>
-    <option value='Delivered'>Delivered</option>
-  </select>
-  
-
-</div>
-
-
-{/* Payment Status Dropdown with color */}
-<div>
-  <label className='font-medium mr-2'>Payment:</label>
- <select
-  className={`p-1 border rounded-md bg-white ${
-    paymentStatus === 'Done'
-      ? 'bg-green-100 text-green-700'
-      : 'bg-yellow-100 text-yellow-800'
-  }`}
-  value={paymentStatus}
-  onChange={(e) => setPaymentStatus(e.target.value)}
-  disabled={
-    selectedOrder.status === 'Delivered' && selectedOrder.payment ||
-    selectedOrder.paymentMethod === 'Online'
-  }
->
-  <option value='Done'>Done</option>
-  <option value='Pending'>Pending</option>
-</select>
-</div>
-                {/* Update Button */}
-                <button
-  className={`mt-2 px-4 py-1 text-white rounded transition ${
-    selectedOrder.status === 'Delivered' && selectedOrder.payment
-      ? 'bg-gray-400 cursor-not-allowed'
-      : 'bg-blue-500 hover:bg-blue-600'
-  }`}
-  disabled={
-  selectedOrder.status === 'Delivered' && selectedOrder.payment ||
-  selectedOrder.paymentMethod === 'Online'
-}
-
-  onClick={async () => {
-    try {
-      const response = await axios.post(
-        backendUrl + '/api/order/status',
-        {
-          orderId: selectedOrder._id,
-          status: orderStatus,
-          payment: paymentStatus === 'Done',
-        },
-        { headers: { token } }
-      );
-      if (response.data.success) {
-        fetchAllOrders(); // Refresh order list
-        setSelectedOrder(null); // Close popup
-      } else {
-        toast.error(response.data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }}
->
-  Update Status
-</button>
-
-              </div>
-            </div>
-            {/* Noting by UserUser */}
-<div style={{ marginTop: '1rem' }}>
-  <label><strong>Note:</strong></label>
-  <div
-    style={{
-      marginTop: '0.5rem',
-      width: '100%',
-      minHeight: '100px',
-      padding: '0.75rem',
-      border: '1px solid #ccc',
-      borderRadius: '6px',
-      backgroundColor: '#f5f5f5',
-      whiteSpace: 'pre-wrap',
-      fontSize: '1rem',
     }}
-  >
-    {selectedOrder.note || 'none'}
-  </div>
-</div>
-            {/* Details */}
-            <div className='text-sm text-gray-800 space-y-2'>
-              
-              <hr className='my-3' />
-
-              <p className='flex items-center gap-2'>
-  <strong>Payment Method:</strong>
-  {selectedOrder.paymentMethod === 'COD' ? (
-    <span className='bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1'>
-      <img src={assets.cod_icon} alt='cod' className='w-4 h-4' />
-      Cash on Delivery
-    </span>
-  ) : (
-    <span className='bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-medium'>
-      Paid Online
-    </span>
-  )}
-  {selectedOrder.note && (
-  <div>
-    <label className='font-medium mr-2'>Customer Note:</label>
-    <span className='italic text-gray-700'>
-      {selectedOrder.note}
-    </span>
-  </div>
+    onPrint={handlePrintOrder}
+  />
 )}
-</p>
 
-
-              <hr className='my-3' />
-
-              {/* Items Table */}
-<table className='w-full table-auto border border-gray-300'>
-  <thead className='bg-gray-100'>
-    <tr>
-      <th className='text-left px-2 py-1'>#</th> {/* Cột STT */}
-      <th className='text-left px-2 py-1'>Item Name</th>
-      <th className='text-left px-2 py-1'>Category</th>
-      <th className='text-left px-2 py-1'>Quantity</th>
-      <th className='text-left px-2 py-1'>Price</th>
-    </tr>
-  </thead>
-  <tbody>
-  {selectedOrder.items.map((item, idx) => (
-    <tr key={idx} className='border-t'>
-      <td className='px-2 py-1'>{idx + 1}</td>
-      <td className='px-2 py-1'>{item.name}</td>
-      <td className='px-2 py-1'>{item.category || 'N/A'}</td>
-      <td className='px-2 py-1'>{item.quantity}</td>
-      <td className='px-2 py-1'>{VND.format(item.price)}</td>
-    </tr>
-  ))}
-</tbody>
-
-</table>
-              
-              <hr className='my-3' />
-
-              {/* Summary */}
-              <div className='flex flex-col text-right space-y-1'>
-              
-              <p><strong>Tạm tính:</strong> {VND.format(selectedOrder.amount + (selectedOrder.discountAmount || 0) - (selectedOrder.shippingFee || 0))}</p>
-<p><strong>Phí vận chuyển:</strong> {VND.format(selectedOrder.shippingFee || 0)}</p>
-<p>
-  <strong>Giảm giá:</strong>{' '}
-  {selectedOrder.promotionCode && (
-    <span className="text-gray-500">(Mã: {selectedOrder.promotionCode})</span>
-  )}{' '}
-  -{VND.format(selectedOrder.discountAmount || 0)}
-</p>
-<p><strong>Tổng cộng:</strong> <strong>{VND.format(selectedOrder.amount)}</strong></p>
-                
-
-
-              </div>
-              <div className='text-left'>
-  <Button type='primary' onClick={() => handlePrintOrder(selectedOrder)}>
-    🖨 In Order Detail
-  </Button>
-</div>
-            </div>
-            
-          </div>
-        </div>
-      )}
       
     </div>
   );

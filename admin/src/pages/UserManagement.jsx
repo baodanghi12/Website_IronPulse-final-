@@ -21,6 +21,8 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import moment from 'moment';
+import OrderPopupDetail from '../components/OrderPopupDetail';
+import ProductDetail from '../components/ProductDetail';
 
 const UserManagement = ({ role }) => {
   const [users, setUsers] = useState([]);
@@ -37,7 +39,13 @@ const UserManagement = ({ role }) => {
   const [sortOrder, setSortOrder] = useState('desc'); 
   const [activeDetailTab, setActiveDetailTab] = useState("1");
   const [form] = Form.useForm();
-  
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isOrderModalVisible, setIsOrderModalVisible] = useState(false);
+  const [orderStatus, setOrderStatus] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState(null);
+const [showProductModal, setShowProductModal] = useState(false);
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     fetchUsersAndStaff();
@@ -304,6 +312,48 @@ const UserManagement = ({ role }) => {
                     label: 'Order History',
                     children: (
                       <div>
+                        <OrderPopupDetail
+  order={{ ...selectedOrder, status: orderStatus, payment: paymentStatus === 'Done' }}
+  onClose={() => {
+    setIsOrderModalVisible(false);
+    setSelectedOrder(null);
+  }}
+  onStatusChange={(value) => setOrderStatus(value)}
+  onPaymentChange={(value) => setPaymentStatus(value)}
+  onUpdateStatus={async () => {
+    try {
+      const response = await axios.post(
+        '/api/order/status',
+        {
+          orderId: selectedOrder._id,
+          status: orderStatus,
+          payment: paymentStatus === 'Done',
+        },
+         {
+    headers: {
+      token, // vì adminAuth đang dùng req.headers.token
+    },
+  }
+      );
+      if (response.data.success) {
+        message.success('Order updated successfully');
+        const userId = editingUser._id;
+        const ordersRes = await axios.get(`/api/order/user/${userId}`);
+        setUserOrders(ordersRes.data.orders || []);
+        setIsOrderModalVisible(false);
+        setSelectedOrder(null);
+      } else {
+        message.error(response.data.message);
+      }
+    } catch (err) {
+      message.error(err.message);
+    }
+  }}
+  onPrint={(order) => {
+    console.log('Print order', order);
+  }}
+/>
+
   <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
     <Select
       value={sortOrder}
@@ -391,15 +441,19 @@ const UserManagement = ({ role }) => {
       showSizeChanger: false,
     }}
     onRow={(record) => ({
-      onClick: () => {
-        const orderId = record._id;
-        const isBill = record.status === 'Delivered' && record.payment;
-        window.open(`/${isBill ? 'bills' : 'orders'}?id=${orderId}`, '_blank');
-      },
-      style: { cursor: 'pointer' },
-    })}
+  onClick: () => {
+     setSelectedOrder(record);
+  setOrderStatus(record.status || '');
+  setPaymentStatus(record.payment ? 'Done' : 'Pending');
+  setIsOrderModalVisible(true);
+  },
+  style: { cursor: 'pointer' },
+})}
+
   />
 </div>
+// chèn ở đâyđây
+
 
                     ),
                   },
@@ -428,10 +482,24 @@ const UserManagement = ({ role }) => {
       ),
     },
     {
-      title: 'Name',
-      dataIndex: 'title', // hoặc 'name' nếu title không tồn tại
-      render: (title, record) => title || record.name || 'N/A',
-    },
+  title: 'Name',
+  dataIndex: 'title',
+  render: (title, record) => {
+    const name = title || record.name || 'N/A';
+    return (
+      <span
+  onClick={() => {
+    setSelectedProductId(record._id);
+    setShowProductModal(true);
+  }}
+  style={{ color: '#1890ff', fontWeight: 500, cursor: 'pointer' }}
+>
+  {name}
+</span>
+
+    );
+  },
+},
     {
       title: 'Category',
       dataIndex: 'category',
@@ -455,14 +523,27 @@ const UserManagement = ({ role }) => {
   pagination={false}
 />
 
+
                     ),
                   },
                 ]
               : []),
           ]}
         />
-      </Modal>
+        <ProductDetail
+  productId={selectedProductId}
+  visible={showProductModal}
+  onClose={() => {
+    setShowProductModal(false);
+    setSelectedProductId(null);
+  }}
+/>
 
+      </Modal>
+       
+
+
+   
     </div>
   );
 };

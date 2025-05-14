@@ -158,6 +158,7 @@ import quanjeankid from './quanjeankid.png'
 import w_img from './w_img.png'
 import heart_filled from './heart_filled.png'
 import heart_outline from './heart_outline.png'
+import zalopay from './zalopay.png'
 export const assets = {
     heart_filled,
     heart_outline,
@@ -262,7 +263,8 @@ export const assets = {
     contact_img,
     razorpay_logo,
     stripe_logo,
-    cross_icon
+    cross_icon,
+    zalopay
 }
 
 export const products = [

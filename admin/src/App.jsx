@@ -11,6 +11,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import HomeScreen from "./pages/HomeScreen";
 import ReportScreen from "./pages/ReportScreen"; // Giữ một lần import duy nhất
 import Bills from "./pages/Bills";
+import ProductDetail from './components/ProductDetail'; 
 import { jwtDecode } from "jwt-decode";
 import {
   Chart as ChartJS,
@@ -84,6 +85,7 @@ const App = () => {
               <Route path="/promotions" element={<PromotionScreen token={token} role={role}/>} />
               <Route path="/bills" element={<Bills token={token}/>} />
               <Route path="/usermanagement" element={<UserManagement token={token} role={role} />} />
+               <Route path="/product/:id" element={<ProductDetail/>} />
             </Routes>
           </div>
           </div>
